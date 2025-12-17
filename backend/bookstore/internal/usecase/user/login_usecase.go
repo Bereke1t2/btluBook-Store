@@ -21,12 +21,10 @@ func (uc *LoginUseCase) Execute(email, password string) (user.User, string, erro
 	if err != nil {
 		return user.User{}, "", err
 	}
-	if u.Password != password {
+	check := security.CheckPasswordHash(password, u.PasswordHash)
+	if !check {
 		return user.User{}, "", errors.New("invalid credentials")
 	}
 	token, err := security.GenerateJWT(u.ID)
-	if err != nil {
-		return user.User{}, "", err
-	}
 	return u, token, nil
 }

@@ -1,8 +1,12 @@
 import 'dart:ui' as ui;
+import 'package:ethio_book_store/features/auth/domain/entities/user.dart';
+import 'package:ethio_book_store/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UserProfilePage extends StatefulWidget {
-  const UserProfilePage({super.key});
+  final User user;
+  const UserProfilePage({super.key, required this.user});
 
   @override
   State<UserProfilePage> createState() => _UserProfilePageState();
@@ -19,64 +23,70 @@ class _UserProfilePageState extends State<UserProfilePage>
   // Animated background
   late final AnimationController _bgController;
 
-  // Controllers
-  final _nameCtrl = TextEditingController(text: 'Alex Johnson');
-  final _usernameCtrl = TextEditingController(text: 'alexj');
-  final _emailCtrl = TextEditingController(text: 'alex.johnson@example.com');
-  final _phoneCtrl = TextEditingController(text: '+1 202 555 0118');
-  final _bioCtrl = TextEditingController(text: 'Reader. Designer. Coffee enthusiast.');
-  final _address1Ctrl = TextEditingController(text: '221B Baker Street');
-  final _address2Ctrl = TextEditingController(text: 'Marylebone');
-  final _cityCtrl = TextEditingController(text: 'London');
-  final _stateCtrl = TextEditingController(text: 'Greater London');
-  final _zipCtrl = TextEditingController(text: 'NW1 6XE');
+  // User entity fields
+  late final TextEditingController _usernameCtrl;
+  late final TextEditingController _emailCtrl;
+  String? _profileImage; // users.profile_image
+
+  // Derived stats (these would come from backend users.*)
+  late int _booksReadCount;
+  late int _readingStreak;
+  DateTime? _lastReadDate;
+  late int _points;
 
   // Password
   final _currentPassCtrl = TextEditingController();
   final _newPassCtrl = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
 
-  // Selections
-  String? _avatarUrl =
-      'https://images.unsplash.com/photo-1544006659-f0b21884ce1d?q=80&w=480&auto=format&fit=crop';
-  String _country = 'United Kingdom';
+  // Preferences (local UI only)
   ThemeMode _themeMode = ThemeMode.system;
-
-  // Toggles
   bool _pushNoti = true;
   bool _emailNoti = true;
-  bool _smsNoti = false;
-  bool _twoFA = false;
-  bool _marketing = true;
-  bool _privateProfile = false;
-
-  // Payment methods (mock)
-  final List<_PaymentCard> _cards = [
-    _PaymentCard(brand: 'Visa', last4: '4242', exp: '08/27', isDefault: true),
-    _PaymentCard(brand: 'Mastercard', last4: '0077', exp: '12/26'),
-  ];
 
   @override
   void initState() {
     super.initState();
-    _bgController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 8))
-          ..repeat(reverse: true);
+    _bgController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat(reverse: true);
+
+    // Initialize state from widget.user
+    _usernameCtrl = TextEditingController(text: widget.user.username);
+    _emailCtrl = TextEditingController(text: widget.user.email);
+    _profileImage =
+        widget.user.profileImage ??
+        'https://images.unsplash.com/photo-1544006659-f0b21884ce1d?q=80&w=480&auto=format&fit=crop';
+    _booksReadCount = widget.user.booksReadCount;
+    _readingStreak = widget.user.readingStreak;
+    _lastReadDate = widget.user.lastReadDate;
+    _points = widget.user.points;
+  }
+
+  @override
+  void didUpdateWidget(covariant UserProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user != widget.user) {
+      _usernameCtrl.text = widget.user.username;
+      _emailCtrl.text = widget.user.email;
+      setState(() {
+        _profileImage =
+            widget.user.profileImage ??
+            'https://images.unsplash.com/photo-1544006659-f0b21884ce1d?q=80&w=480&auto=format&fit=crop';
+        _booksReadCount = widget.user.booksReadCount;
+        _readingStreak = widget.user.readingStreak;
+        _lastReadDate = widget.user.lastReadDate;
+        _points = widget.user.points;
+      });
+    }
   }
 
   @override
   void dispose() {
     _bgController.dispose();
-    _nameCtrl.dispose();
     _usernameCtrl.dispose();
     _emailCtrl.dispose();
-    _phoneCtrl.dispose();
-    _bioCtrl.dispose();
-    _address1Ctrl.dispose();
-    _address2Ctrl.dispose();
-    _cityCtrl.dispose();
-    _stateCtrl.dispose();
-    _zipCtrl.dispose();
     _currentPassCtrl.dispose();
     _newPassCtrl.dispose();
     _confirmPassCtrl.dispose();
@@ -87,7 +97,10 @@ class _UserProfilePageState extends State<UserProfilePage>
     required String hint,
     IconData? icon,
     Widget? suffix,
-    EdgeInsets content = const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+    EdgeInsets content = const EdgeInsets.symmetric(
+      vertical: 14,
+      horizontal: 16,
+    ),
   }) {
     return InputDecoration(
       hintText: hint,
@@ -129,464 +142,347 @@ class _UserProfilePageState extends State<UserProfilePage>
             Alignment.bottomLeft,
             t,
           )!;
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: begin,
-                end: end,
-                colors: const [_ink, _slate, _leather],
-                stops: const [0.0, 0.5, 1.0],
-              ),
-            ),
-            child: Stack(
-              children: [
-                const Positioned(
-                  left: -80,
-                  top: -60,
-                  child: GlowCircle(size: 280, color: _gold),
+          return BlocConsumer<AuthBloc, AuthState>(
+            listener: (context, state) {
+              if (state is Authenticated) {
+                // Update user info if changed
+                if (state.user != widget.user) {
+                  _usernameCtrl.text = state.user.username;
+                  _emailCtrl.text = state.user.email;
+                  setState(() {
+                    _profileImage =
+                        state.user.profileImage ??
+                        'https://images.unsplash.com/photo-1544006659-f0b21884ce1d?q=80&w=480&auto=format&fit=crop';
+                    _booksReadCount = state.user.booksReadCount;
+                    _readingStreak = state.user.readingStreak;
+                    _lastReadDate = state.user.lastReadDate;
+                    _points = state.user.points;
+                  });
+                }
+              } else if (state is LogoutSuccess) {
+                Navigator.of(context).pushReplacementNamed('/login');
+              }else if (state is LogoutFailure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Logout failed: ${state.message}'),
+                  ),
+                );
+              }
+            },
+            builder: (context, state) {
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: begin,
+                    end: end,
+                    colors: const [_ink, _slate, _leather],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
                 ),
-                const Positioned(
-                  right: -90,
-                  bottom: -60,
-                  child: GlowCircle(size: 330, color: Color(0xFFA1E3B5)),
-                ),
-                const Positioned(
-                  right: -10,
-                  top: 120,
-                  child: GlowCircle(size: 160, color: Color(0xFFD9CBAA)),
-                ),
-                SafeArea(
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(child: _buildHeader(context)),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                          child: _buildAvatarCard(width),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                          child: _section(
-                            icon: Icons.person_rounded,
-                            title: 'Personal information',
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _nameCtrl,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration:
-                                            _glassInput(hint: 'Full name', icon: Icons.badge_rounded),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _usernameCtrl,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration: _glassInput(
-                                            hint: 'Username', icon: Icons.alternate_email_rounded),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _emailCtrl,
-                                        keyboardType: TextInputType.emailAddress,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration:
-                                            _glassInput(hint: 'Email', icon: Icons.mail_rounded),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _phoneCtrl,
-                                        keyboardType: TextInputType.phone,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration:
-                                            _glassInput(hint: 'Phone', icon: Icons.phone_rounded),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                TextField(
-                                  controller: _bioCtrl,
-                                  maxLines: 3,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: _glassInput(
-                                    hint: 'Bio',
-                                    icon: Icons.edit_note_rounded,
-                                    content: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: _primaryButton(
-                                    label: 'Save changes',
-                                    icon: Icons.save_rounded,
-                                    onTap: _saveProfile,
-                                  ),
-                                ),
-                              ],
+                child: Stack(
+                  children: [
+                    const Positioned(
+                      left: -80,
+                      top: -60,
+                      child: GlowCircle(size: 280, color: _gold),
+                    ),
+                    const Positioned(
+                      right: -90,
+                      bottom: -60,
+                      child: GlowCircle(size: 330, color: Color(0xFFA1E3B5)),
+                    ),
+                    const Positioned(
+                      right: -10,
+                      top: 120,
+                      child: GlowCircle(size: 160, color: Color(0xFFD9CBAA)),
+                    ),
+                    SafeArea(
+                      child: CustomScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        slivers: [
+                          SliverToBoxAdapter(child: _buildHeader(context)),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                              child: _buildAvatarCard(width),
                             ),
                           ),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                          child: _section(
-                            icon: Icons.location_on_rounded,
-                            title: 'Address',
-                            child: Column(
-                              children: [
-                                TextField(
-                                  controller: _address1Ctrl,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: _glassInput(
-                                    hint: 'Address line 1',
-                                    icon: Icons.home_rounded,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                TextField(
-                                  controller: _address2Ctrl,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: _glassInput(
-                                    hint: 'Address line 2 (optional)',
-                                    icon: Icons.apartment_rounded,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                              child: _section(
+                                icon: Icons.person_rounded,
+                                title: 'Account',
+                                child: Column(
                                   children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _cityCtrl,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration:
-                                            _glassInput(hint: 'City', icon: Icons.location_city_rounded),
-                                      ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextField(
+                                            controller: _usernameCtrl,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                            decoration: _glassInput(
+                                              hint: 'Username',
+                                              icon:
+                                                  Icons.alternate_email_rounded,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: TextField(
+                                            controller: _emailCtrl,
+                                            keyboardType:
+                                                TextInputType.emailAddress,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                            decoration: _glassInput(
+                                              hint: 'Email',
+                                              icon: Icons.mail_rounded,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _stateCtrl,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration: _glassInput(
-                                            hint: 'State/Province', icon: Icons.map_rounded),
+                                    const SizedBox(height: 14),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: _primaryButton(
+                                        label: 'Save',
+                                        icon: Icons.save_rounded,
+                                        onTap: _saveAccount,
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 10),
-                                Row(
+                              ),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                              child: _section(
+                                icon: Icons.insights_rounded,
+                                title: 'Reading stats',
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 6,
                                   children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _zipCtrl,
-                                        keyboardType: TextInputType.text,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration:
-                                            _glassInput(hint: 'ZIP/Postal code', icon: Icons.local_post_office_rounded),
-                                      ),
+                                    _chip(
+                                      icon: Icons.menu_book_rounded,
+                                      label: 'Books read: $_booksReadCount',
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _glassDropdown<String>(
-                                        value: _country,
-                                        icon: Icons.public_rounded,
-                                        items: const [
-                                          'United States',
-                                          'United Kingdom',
-                                          'Canada',
-                                          'Germany',
-                                          'France',
-                                          'Ethiopia',
+                                    _chip(
+                                      icon: Icons.local_fire_department_rounded,
+                                      label: 'Streak: $_readingStreak',
+                                    ),
+                                    _chip(
+                                      icon: Icons.today_rounded,
+                                      label:
+                                          'Last read: ${_lastReadDate == null ? '—' : _fmtDate(_lastReadDate!)}',
+                                    ),
+                                    _chip(
+                                      icon: Icons.stars_rounded,
+                                      label: 'Points: $_points',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                              child: _section(
+                                icon: Icons.security_rounded,
+                                title: 'Security',
+                                child: Column(
+                                  children: [
+                                    _expander(
+                                      headerIcon: Icons.password_rounded,
+                                      header: 'Change password',
+                                      child: Column(
+                                        children: [
+                                          TextField(
+                                            controller: _currentPassCtrl,
+                                            obscureText: true,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                            decoration: _glassInput(
+                                              hint: 'Current password',
+                                              icon: Icons.lock_clock_rounded,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          TextField(
+                                            controller: _newPassCtrl,
+                                            obscureText: true,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                            decoration: _glassInput(
+                                              hint: 'New password',
+                                              icon: Icons.lock_open_rounded,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          TextField(
+                                            controller: _confirmPassCtrl,
+                                            obscureText: true,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                            decoration: _glassInput(
+                                              hint: 'Confirm new password',
+                                              icon: Icons.lock_reset_rounded,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: _primaryButton(
+                                              label: 'Update',
+                                              icon: Icons.check_rounded,
+                                              onTap: _updatePassword,
+                                            ),
+                                          ),
                                         ],
-                                        onChanged: (v) => setState(() => _country = v ?? _country),
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 14),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: _primaryButton(
-                                    label: 'Save address',
-                                    icon: Icons.save_as_rounded,
-                                    onTap: _saveAddress,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                          child: _section(
-                            icon: Icons.settings_suggest_rounded,
-                            title: 'Preferences',
-                            child: Column(
-                              children: [
-                                _switchRow(
-                                  icon: Icons.notifications_active_rounded,
-                                  label: 'Push notifications',
-                                  value: _pushNoti,
-                                  onChanged: (v) => setState(() => _pushNoti = v),
-                                ),
-                                _switchRow(
-                                  icon: Icons.mail_outline_rounded,
-                                  label: 'Email updates',
-                                  value: _emailNoti,
-                                  onChanged: (v) => setState(() => _emailNoti = v),
-                                ),
-                                _switchRow(
-                                  icon: Icons.sms_rounded,
-                                  label: 'SMS alerts',
-                                  value: _smsNoti,
-                                  onChanged: (v) => setState(() => _smsNoti = v),
-                                ),
-                                _switchRow(
-                                  icon: Icons.campaign_rounded,
-                                  label: 'Marketing messages',
-                                  value: _marketing,
-                                  onChanged: (v) => setState(() => _marketing = v),
-                                ),
-                                const Divider(color: Colors.white24, height: 24),
-                                Row(
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                              child: _section(
+                                icon: Icons.settings_suggest_rounded,
+                                title: 'Preferences',
+                                child: Column(
                                   children: [
-                                    _leadingIcon(Icons.brightness_6_rounded),
-                                    const SizedBox(width: 10),
-                                    const Expanded(
-                                      child: Text(
-                                        'Theme',
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                                      ),
+                                    _switchRow(
+                                      icon: Icons.notifications_active_rounded,
+                                      label: 'Push notifications',
+                                      value: _pushNoti,
+                                      onChanged: (v) =>
+                                          setState(() => _pushNoti = v),
                                     ),
-                                    _themePill(
-                                      label: 'System',
-                                      selected: _themeMode == ThemeMode.system,
-                                      onTap: () => setState(() => _themeMode = ThemeMode.system),
+                                    _switchRow(
+                                      icon: Icons.mail_outline_rounded,
+                                      label: 'Email updates',
+                                      value: _emailNoti,
+                                      onChanged: (v) =>
+                                          setState(() => _emailNoti = v),
                                     ),
-                                    const SizedBox(width: 6),
-                                    _themePill(
-                                      label: 'Light',
-                                      selected: _themeMode == ThemeMode.light,
-                                      onTap: () => setState(() => _themeMode = ThemeMode.light),
+                                    const Divider(
+                                      color: Colors.white24,
+                                      height: 24,
                                     ),
-                                    const SizedBox(width: 6),
-                                    _themePill(
-                                      label: 'Dark',
-                                      selected: _themeMode == ThemeMode.dark,
-                                      onTap: () => setState(() => _themeMode = ThemeMode.dark),
+                                    Row(
+                                      children: [
+                                        _leadingIcon(
+                                          Icons.brightness_6_rounded,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        const Expanded(
+                                          child: Text(
+                                            'Theme',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                        _themePill(
+                                          label: 'System',
+                                          selected:
+                                              _themeMode == ThemeMode.system,
+                                          onTap: () => setState(
+                                            () => _themeMode = ThemeMode.system,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        _themePill(
+                                          label: 'Light',
+                                          selected:
+                                              _themeMode == ThemeMode.light,
+                                          onTap: () => setState(
+                                            () => _themeMode = ThemeMode.light,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        _themePill(
+                                          label: 'Dark',
+                                          selected:
+                                              _themeMode == ThemeMode.dark,
+                                          onTap: () => setState(
+                                            () => _themeMode = ThemeMode.dark,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 4),
-                                _switchRow(
-                                  icon: Icons.lock_person_rounded,
-                                  label: 'Private profile',
-                                  value: _privateProfile,
-                                  onChanged: (v) => setState(() => _privateProfile = v),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                          child: _section(
-                            icon: Icons.security_rounded,
-                            title: 'Security',
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _switchRow(
-                                  icon: Icons.verified_user_rounded,
-                                  label: 'Two‑factor authentication',
-                                  value: _twoFA,
-                                  onChanged: (v) => setState(() => _twoFA = v),
-                                ),
-                                const SizedBox(height: 6),
-                                _expander(
-                                  headerIcon: Icons.password_rounded,
-                                  header: 'Change password',
-                                  child: Column(
-                                    children: [
-                                      TextField(
-                                        controller: _currentPassCtrl,
-                                        obscureText: true,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration: _glassInput(
-                                          hint: 'Current password',
-                                          icon: Icons.lock_clock_rounded,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      TextField(
-                                        controller: _newPassCtrl,
-                                        obscureText: true,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration: _glassInput(
-                                          hint: 'New password',
-                                          icon: Icons.lock_open_rounded,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      TextField(
-                                        controller: _confirmPassCtrl,
-                                        obscureText: true,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration: _glassInput(
-                                          hint: 'Confirm new password',
-                                          icon: Icons.lock_reset_rounded,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: _primaryButton(
-                                          label: 'Update password',
-                                          icon: Icons.check_rounded,
-                                          onTap: _updatePassword,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                              child: _section(
+                                icon: Icons.warning_amber_rounded,
+                                title: 'Session',
+                                child: Row(
                                   children: [
-                                    _leadingIcon(Icons.devices_other_rounded),
-                                    const SizedBox(width: 10),
-                                    const Expanded(
-                                      child: Text(
-                                        'Active sessions',
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                                      ),
+                                    _leadingIcon(
+                                      Icons.logout_rounded,
+                                      color: Colors.redAccent,
                                     ),
-                                    _secondaryButton(
-                                      label: 'Manage',
-                                      onTap: _manageSessions,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                          child: _section(
-                            icon: Icons.payment_rounded,
-                            title: 'Payment methods',
-                            child: Column(
-                              children: [
-                                for (final card in _cards) ...[
-                                  _cardRow(card),
-                                  const SizedBox(height: 8),
-                                ],
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: _primaryButton(
-                                    label: 'Add card',
-                                    icon: Icons.add_card_rounded,
-                                    onTap: _addCardSheet,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                          child: _section(
-                            icon: Icons.warning_amber_rounded,
-                            title: 'Danger zone',
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    _leadingIcon(Icons.file_download_rounded),
-                                    const SizedBox(width: 10),
-                                    const Expanded(
-                                      child: Text(
-                                        'Download my data',
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                                      ),
-                                    ),
-                                    _secondaryButton(
-                                      label: 'Request',
-                                      onTap: _downloadData,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    _leadingIcon(Icons.logout_rounded, color: Colors.redAccent),
                                     const SizedBox(width: 10),
                                     const Expanded(
                                       child: Text(
                                         'Log out',
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
-                                    _dangerButton(
-                                      label: 'Log out',
-                                      onTap: _logout,
+
+                                    BlocBuilder<AuthBloc, AuthState>(
+                                      builder: (context, state) {
+                                        if (state is LogoutLoading){
+                                          return const Center(
+                                            child: CircularProgressIndicator(),
+                                          );
+                                        }
+                                        return _dangerButton(
+                                          label: 'Log out',
+                                          onTap: _logout,
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    _leadingIcon(Icons.delete_forever_rounded, color: Colors.red),
-                                    const SizedBox(width: 10),
-                                    const Expanded(
-                                      child: Text(
-                                        'Delete account',
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                                      ),
-                                    ),
-                                    _dangerButton(
-                                      label: 'Delete',
-                                      onTap: _confirmDelete,
-                                    ),
-                                  ],
-                                ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
+                          SliverToBoxAdapter(
+                            child: SizedBox(height: media.padding.bottom + 12),
+                          ),
+                        ],
                       ),
-                      SliverToBoxAdapter(child: SizedBox(height: media.padding.bottom + 12)),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
@@ -625,10 +521,10 @@ class _UserProfilePageState extends State<UserProfilePage>
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8,
+                ),
               ),
             ),
           ),
@@ -648,15 +544,9 @@ class _UserProfilePageState extends State<UserProfilePage>
 
   // Avatar card
   Widget _buildAvatarCard(double width) {
-    final initials = _nameCtrl.text.trim().isEmpty
+    final initials = _usernameCtrl.text.trim().isEmpty
         ? 'U'
-        : _nameCtrl.text
-            .trim()
-            .split(RegExp(r'\s+'))
-            .map((e) => e.isNotEmpty ? e[0] : '')
-            .take(2)
-            .join()
-            .toUpperCase();
+        : _usernameCtrl.text.trim().substring(0, 1).toUpperCase();
 
     return GlassContainer(
       borderRadius: 20,
@@ -687,7 +577,7 @@ class _UserProfilePageState extends State<UserProfilePage>
                   ],
                 ),
                 child: ClipOval(
-                  child: _avatarUrl == null
+                  child: _profileImage == null || _profileImage!.isEmpty
                       ? Container(
                           color: Colors.black26,
                           child: Center(
@@ -702,7 +592,7 @@ class _UserProfilePageState extends State<UserProfilePage>
                           ),
                         )
                       : Image.network(
-                          _avatarUrl!,
+                          _profileImage!,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Center(
                             child: Text(
@@ -729,7 +619,11 @@ class _UserProfilePageState extends State<UserProfilePage>
                     color: Colors.white.withValues(alpha: 28 / 255),
                     borderColor: Colors.white.withValues(alpha: 76 / 255),
                     padding: const EdgeInsets.all(6),
-                    child: const Icon(Icons.photo_camera_rounded, size: 18, color: Colors.white),
+                    child: const Icon(
+                      Icons.photo_camera_rounded,
+                      size: 18,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -741,7 +635,7 @@ class _UserProfilePageState extends State<UserProfilePage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _nameCtrl.text,
+                  _usernameCtrl.text,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -762,9 +656,15 @@ class _UserProfilePageState extends State<UserProfilePage>
                   spacing: 8,
                   runSpacing: 6,
                   children: [
-                    _chip(icon: Icons.history_rounded, label: 'Orders: 12'),
-                    _chip(icon: Icons.favorite_rounded, label: 'Wishlist: 7'),
-                    _chip(icon: Icons.stars_rounded, label: 'Member: Gold'),
+                    _chip(
+                      icon: Icons.menu_book_rounded,
+                      label: 'Books: $_booksReadCount',
+                    ),
+                    _chip(
+                      icon: Icons.local_fire_department_rounded,
+                      label: 'Streak: $_readingStreak',
+                    ),
+                    _chip(icon: Icons.stars_rounded, label: 'Points: $_points'),
                   ],
                 ),
               ],
@@ -776,7 +676,11 @@ class _UserProfilePageState extends State<UserProfilePage>
   }
 
   // Helpers: section container
-  Widget _section({required IconData icon, required String title, required Widget child}) {
+  Widget _section({
+    required IconData icon,
+    required String title,
+    required Widget child,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -786,7 +690,11 @@ class _UserProfilePageState extends State<UserProfilePage>
             const SizedBox(width: 10),
             Text(
               title,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+              ),
             ),
           ],
         ),
@@ -843,7 +751,13 @@ class _UserProfilePageState extends State<UserProfilePage>
         _leadingIcon(icon),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
         Switch.adaptive(
           value: value,
@@ -857,15 +771,23 @@ class _UserProfilePageState extends State<UserProfilePage>
     );
   }
 
-  Widget _themePill({required String label, required bool selected, required VoidCallback onTap}) {
+  Widget _themePill({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
       child: GlassContainer(
         borderRadius: 999,
         blurSigma: 12,
-        color: selected ? _gold.withValues(alpha: 56 / 255) : Colors.white.withValues(alpha: 22 / 255),
-        borderColor: selected ? _gold : Colors.white.withValues(alpha: 56 / 255),
+        color: selected
+            ? _gold.withValues(alpha: 56 / 255)
+            : Colors.white.withValues(alpha: 22 / 255),
+        borderColor: selected
+            ? _gold
+            : Colors.white.withValues(alpha: 56 / 255),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Text(
           label,
@@ -878,7 +800,11 @@ class _UserProfilePageState extends State<UserProfilePage>
     );
   }
 
-  Widget _primaryButton({required String label, required IconData icon, required VoidCallback onTap}) {
+  Widget _primaryButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return SizedBox(
       height: 44,
       child: ElevatedButton.icon(
@@ -886,7 +812,9 @@ class _UserProfilePageState extends State<UserProfilePage>
         style: ElevatedButton.styleFrom(
           backgroundColor: _gold,
           foregroundColor: Colors.black,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
         icon: Icon(icon),
         label: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
@@ -894,7 +822,10 @@ class _UserProfilePageState extends State<UserProfilePage>
     );
   }
 
-  Widget _secondaryButton({required String label, required VoidCallback onTap}) {
+  Widget _secondaryButton({
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return GlassContainer(
       borderRadius: 12,
       blurSigma: 12,
@@ -903,7 +834,13 @@ class _UserProfilePageState extends State<UserProfilePage>
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: InkWell(
         onTap: onTap,
-        child: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }
@@ -917,12 +854,22 @@ class _UserProfilePageState extends State<UserProfilePage>
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: InkWell(
         onTap: onTap,
-        child: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _expander({required IconData headerIcon, required String header, required Widget child}) {
+  Widget _expander({
+    required IconData headerIcon,
+    required String header,
+    required Widget child,
+  }) {
     return _GlassExpansionTile(
       headerIcon: headerIcon,
       header: header,
@@ -930,61 +877,23 @@ class _UserProfilePageState extends State<UserProfilePage>
     );
   }
 
-  Widget _glassDropdown<T>({
-    required T value,
-    required List<T> items,
-    required ValueChanged<T?> onChanged,
-    required IconData icon,
-  }) {
-    return GlassContainer(
-      borderRadius: 14,
-      blurSigma: 16,
-      color: Colors.white.withValues(alpha: 26 / 255),
-      borderColor: Colors.white.withValues(alpha: 56 / 255),
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          items: items
-              .map((e) => DropdownMenuItem<T>(
-                    value: e,
-                    child: Text('$e', style: const TextStyle(color: Colors.white)),
-                  ))
-              .toList(),
-          iconEnabledColor: Colors.white,
-          dropdownColor: const Color(0xCC22313F),
-          onChanged: onChanged,
-          style: const TextStyle(color: Colors.white),
-        ),
-      ),
-    );
-  }
-
   // Actions
 
-  void _saveProfile() async {
-    final nameOk = _nameCtrl.text.trim().isNotEmpty;
-    final emailOk = RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(_emailCtrl.text.trim());
-    if (!nameOk || !emailOk) {
-      _toast('Please enter a valid name and email.');
+  void _saveAccount() async {
+    final usernameOk = _usernameCtrl.text.trim().isNotEmpty;
+    final emailOk = RegExp(
+      r'^[^@]+@[^@]+\.[^@]+$',
+    ).hasMatch(_emailCtrl.text.trim());
+    if (!usernameOk || !emailOk) {
+      _toast('Enter a valid username and email.');
       return;
     }
     await _withProgress(() async {
+      // TODO: call backend to update users.username, users.email, users.profile_image
       await Future<void>.delayed(const Duration(milliseconds: 800));
     });
-    _toast('Profile saved');
-    setState(() {}); // refresh header
-  }
-
-  void _saveAddress() async {
-    if (_address1Ctrl.text.trim().isEmpty || _cityCtrl.text.trim().isEmpty || _zipCtrl.text.trim().isEmpty) {
-      _toast('Please complete your address.');
-      return;
-    }
-    await _withProgress(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 700));
-    });
-    _toast('Address saved');
+    _toast('Account saved');
+    setState(() {});
   }
 
   void _updatePassword() async {
@@ -996,209 +905,13 @@ class _UserProfilePageState extends State<UserProfilePage>
       return;
     }
     await _withProgress(() async {
+      // TODO: call backend to update users.password_hash
       await Future<void>.delayed(const Duration(milliseconds: 900));
     });
     _currentPassCtrl.clear();
     _newPassCtrl.clear();
     _confirmPassCtrl.clear();
     _toast('Password updated');
-  }
-
-  void _manageSessions() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => GlassContainer(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        padding: const EdgeInsets.all(16),
-        borderRadius: 24,
-        blurSigma: 26,
-        color: Colors.white.withValues(alpha: 24 / 255),
-        borderColor: Colors.white.withValues(alpha: 66 / 255),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _sheetHandle(),
-              const SizedBox(height: 8),
-              _sessionRow(device: 'iPhone 15 Pro', location: 'London, UK', current: true),
-              const Divider(color: Colors.white24),
-              _sessionRow(device: 'Pixel 8', location: 'Berlin, DE'),
-              const Divider(color: Colors.white24),
-              _sessionRow(device: 'MacBook Pro', location: 'Addis Ababa, ET'),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: _dangerButton(
-                  label: 'Sign out all',
-                  onTap: () {
-                    Navigator.pop(context);
-                    _toast('Signed out from all devices');
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _sessionRow({required String device, required String location, bool current = false}) {
-    return Row(
-      children: [
-        _leadingIcon(Icons.devices_rounded, color: current ? _gold : Colors.white),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(device,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: current ? FontWeight.w800 : FontWeight.w600,
-                  )),
-              const SizedBox(height: 2),
-              Text(
-                current ? '$location • Current session' : location,
-                style: TextStyle(color: current ? _gold : Colors.white70, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-        if (!current)
-          _secondaryButton(
-            label: 'Sign out',
-            onTap: () => _toast('Session signed out'),
-          ),
-      ],
-    );
-  }
-
-  void _addCardSheet() {
-    final brandCtrl = TextEditingController();
-    final numberCtrl = TextEditingController();
-    final expCtrl = TextEditingController();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: GlassContainer(
-          margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-          padding: const EdgeInsets.all(16),
-          borderRadius: 24,
-          blurSigma: 26,
-          color: Colors.white.withValues(alpha: 24 / 255),
-          borderColor: Colors.white.withValues(alpha: 66 / 255),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _sheetHandle(),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: brandCtrl,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: _glassInput(hint: 'Brand (e.g., Visa)', icon: Icons.credit_card_rounded),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: numberCtrl,
-                  keyboardType: TextInputType.number,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: _glassInput(hint: 'Card number', icon: Icons.numbers_rounded),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: expCtrl,
-                  keyboardType: TextInputType.datetime,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: _glassInput(hint: 'Expiry (MM/YY)', icon: Icons.calendar_month_rounded),
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: _primaryButton(
-                    label: 'Add card',
-                    icon: Icons.add_rounded,
-                    onTap: () {
-                      final digits = numberCtrl.text.replaceAll(RegExp(r'[^0-9]'), '');
-                      if (brandCtrl.text.isEmpty || digits.length < 4 || expCtrl.text.length < 4) {
-                        _toast('Please enter valid card details.');
-                        return;
-                      }
-                      setState(() {
-                        _cards.add(_PaymentCard(
-                          brand: brandCtrl.text.trim(),
-                          last4: digits.substring(digits.length - 4),
-                          exp: expCtrl.text.trim(),
-                        ));
-                      });
-                      Navigator.pop(context);
-                      _toast('Card added');
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _cardRow(_PaymentCard card) {
-    return GlassContainer(
-      borderRadius: 14,
-      blurSigma: 14,
-      color: Colors.white.withValues(alpha: 18 / 255),
-      borderColor: Colors.white.withValues(alpha: 56 / 255),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Row(
-        children: [
-          _leadingIcon(Icons.credit_card_rounded, color: card.isDefault ? _gold : Colors.white),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              '${card.brand} •••• ${card.last4}  •  ${card.exp}',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-            ),
-          ),
-          if (!card.isDefault)
-            _secondaryButton(
-              label: 'Make default',
-              onTap: () {
-                setState(() {
-                  for (final c in _cards) {
-                    c.isDefault = false;
-                  }
-                  card.isDefault = true;
-                });
-                _toast('Default payment method updated');
-              },
-            ),
-          const SizedBox(width: 6),
-          _dangerButton(
-            label: 'Remove',
-            onTap: () {
-              setState(() => _cards.remove(card));
-              _toast('Card removed');
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _downloadData() async {
-    await _withProgress(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-    });
-    _toast('Export started. You’ll receive an email.');
   }
 
   void _logout() async {
@@ -1208,46 +921,23 @@ class _UserProfilePageState extends State<UserProfilePage>
       confirmLabel: 'Log out',
     );
     if (ok) {
+      context.read<AuthBloc>().add(LogoutRequested());
       _toast('Logged out');
-      // Navigate to login screen if needed
     }
   }
 
-  void _confirmDelete() async {
-    final ok = await _confirm(
-      title: 'Delete account',
-      message:
-          'This will permanently remove your account and data. This action cannot be undone.',
-      confirmLabel: 'Delete',
-      danger: true,
-    );
-    if (ok) {
-      await _withProgress(() async {
-        await Future<void>.delayed(const Duration(seconds: 1));
-      });
-      _toast('Account deleted');
-      // Navigate out if needed
-    }
-  }
-
-  // Photo change sheet (no external plugins; presets and URL supported)
+  // Photo change sheet -> updates users.profile_image
   void _changePhotoSheet() {
     final urlCtrl = TextEditingController();
-    final presets = const [
-      'https://images.unsplash.com/photo-1544006659-f0b21884ce1d?q=80&w=480&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?q=80&w=480&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=480&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=480&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1541534401786-2077eed87a72?q=80&w=480&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?q=80&w=480&auto=format&fit=crop',
-    ];
 
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: GlassContainer(
           margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
           padding: const EdgeInsets.all(16),
@@ -1269,66 +959,15 @@ class _UserProfilePageState extends State<UserProfilePage>
                     Expanded(
                       child: Text(
                         'Change profile photo',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Choose a preset', style: TextStyle(color: Colors.white70)),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 84,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: presets.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
-                    itemBuilder: (_, i) {
-                      final url = presets[i];
-                      return InkWell(
-                        onTap: () {
-                          setState(() => _avatarUrl = url);
-                          Navigator.pop(context);
-                          _toast('Profile photo updated');
-                        },
-                        borderRadius: BorderRadius.circular(14),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Stack(
-                            children: [
-                              Image.network(
-                                url,
-                                width: 84,
-                                height: 84,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned.fill(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: _avatarUrl == url ? _gold : Colors.transparent,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
                 const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('From URL', style: TextStyle(color: Colors.white70)),
-                ),
-                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
@@ -1345,12 +984,19 @@ class _UserProfilePageState extends State<UserProfilePage>
                     _primaryButton(
                       label: 'Apply',
                       icon: Icons.check_rounded,
-                      onTap: () {
-                        if (urlCtrl.text.trim().isEmpty) {
+                      onTap: () async {
+                        final url = urlCtrl.text.trim();
+                        if (url.isEmpty) {
                           _toast('Enter a valid image URL.');
                           return;
                         }
-                        setState(() => _avatarUrl = urlCtrl.text.trim());
+                        await _withProgress(() async {
+                          // TODO: call backend to update users.profile_image
+                          await Future<void>.delayed(
+                            const Duration(milliseconds: 500),
+                          );
+                        });
+                        setState(() => _profileImage = url);
                         Navigator.pop(context);
                         _toast('Profile photo updated');
                       },
@@ -1362,8 +1008,14 @@ class _UserProfilePageState extends State<UserProfilePage>
                   alignment: Alignment.centerRight,
                   child: _dangerButton(
                     label: 'Remove photo',
-                    onTap: () {
-                      setState(() => _avatarUrl = null);
+                    onTap: () async {
+                      await _withProgress(() async {
+                        // TODO: call backend set users.profile_image = NULL
+                        await Future<void>.delayed(
+                          const Duration(milliseconds: 400),
+                        );
+                      });
+                      setState(() => _profileImage = null);
                       Navigator.pop(context);
                       _toast('Photo removed');
                     },
@@ -1446,10 +1098,20 @@ class _UserProfilePageState extends State<UserProfilePage>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Text(message, style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center),
+                Text(
+                  message,
+                  style: const TextStyle(color: Colors.white70),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 14),
                 Row(
                   children: [
@@ -1481,28 +1143,17 @@ class _UserProfilePageState extends State<UserProfilePage>
       ),
     );
     return ok ?? false;
-    }
+  }
 
   void _toast(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      behavior: SnackBarBehavior.floating,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+    );
   }
-}
 
-// Model
-class _PaymentCard {
-  final String brand;
-  final String last4;
-  final String exp;
-  bool isDefault;
-  _PaymentCard({
-    required this.brand,
-    required this.last4,
-    required this.exp,
-    this.isDefault = false,
-  });
+  String _fmtDate(DateTime d) {
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  }
 }
 
 // Glow circle used in the background
@@ -1624,18 +1275,26 @@ class _GlassExpansionTileState extends State<_GlassExpansionTile> {
               Expanded(
                 child: Text(
                   widget.header,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               Transform.rotate(
                 angle: _open ? 3.1415 : 0,
-                child: const Icon(Icons.expand_more_rounded, color: Colors.white),
+                child: const Icon(
+                  Icons.expand_more_rounded,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
         ),
         AnimatedCrossFade(
-          crossFadeState: _open ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+          crossFadeState: _open
+              ? CrossFadeState.showFirst
+              : CrossFadeState.showSecond,
           duration: const Duration(milliseconds: 220),
           firstChild: Padding(
             padding: const EdgeInsets.only(top: 10),

@@ -40,11 +40,13 @@ func main() {
 	deleteBookUC := bookusecase.NewDeleteBookUsecase(bookRepo)
 	getAllBooksUC := bookusecase.NewGetAllBooksUseCase(bookRepo)
 
+
 	createUserUC := userusecase.NewCreateUserUseCase(userRepo)
 	getUserByIDUC := userusecase.NewGetUserByIDUseCase(userRepo)
 	updateUserUC := userusecase.NewUpdateUserUseCase(userRepo)
 	deleteUserUC := userusecase.NewDeleteUserUsecase(userRepo)
 	getAllUsersUC := userusecase.NewGetAllUsersUseCase(userRepo)
+	// getUserByEmailUc := userusecase.NewGetUserByEmailUseCase(userRepo)
 	loginUC := userusecase.NewLoginUseCase(userRepo)
 
 	userHandler := handler.NewUserHandler(createUserUC, updateUserUC , deleteUserUC , getAllUsersUC,getUserByIDUC, loginUC)

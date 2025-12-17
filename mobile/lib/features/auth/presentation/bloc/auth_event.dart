@@ -11,11 +11,17 @@ class LoginRequested extends AuthEvent {
 }
 
 class SignupRequested extends AuthEvent {
+  final String username;
   final String email;
   final String password;
-  final String username;
+  final String? profileImage;
 
-  SignupRequested({required this.email, required this.password, required this.username});
+  SignupRequested({
+    required this.username,
+    required this.email,
+    required this.password,
+    this.profileImage,
+  });
 }
 
 class LogoutRequested extends AuthEvent {}

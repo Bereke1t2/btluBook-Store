@@ -1,3 +1,4 @@
+import 'package:ethio_book_store/features/auth/domain/entities/user.dart';
 import 'package:ethio_book_store/features/books/domain/entities/book.dart';
 import 'package:ethio_book_store/features/books/presentation/bloc/book_bloc.dart';
 import 'package:ethio_book_store/features/books/presentation/pages/user_profile_page.dart';
@@ -12,7 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final User user;
+  const HomePage({super.key, required this.user});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -599,7 +601,7 @@ class _HomePageState extends State<HomePage>
                 _navIndex = 3;
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const UserProfilePage()),
+                  MaterialPageRoute(builder: (_) => UserProfilePage(user: widget.user)),
                 );
               }),
             ),

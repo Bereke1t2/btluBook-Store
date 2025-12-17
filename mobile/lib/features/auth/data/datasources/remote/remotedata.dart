@@ -40,11 +40,12 @@ Future<UserModel> login(String email, String password) async {
       final decoded = json.decode(response.body);
       final token = decoded['data']['token'];
       final user = decoded['data']['user'];
+      print(user);
 
       localDataSource.cacheUser(UserModel.fromJson(user), token);
       return UserModel.fromJson(user);
     } else {
-      throw Exception("Failed to login with response code: ${response.statusCode}");
+      throw Exception("Failed to login with response code: ${response.statusCode} , message: ${response.body}");
     }
   } catch (e) {
     throw Exception("Failed to login: $e");
@@ -55,20 +56,23 @@ Future<UserModel> login(String email, String password) async {
   Future<UserModel> signup(String email, String password, String username) async {
    final response = await httpClient.post(
       Uri.parse("${UrlConst.baseUrl}${UrlConst.signupEndpoint}"),
-  
-      body: {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: json.encode({
         "email": email,
         "password": password,
         "username": username,
-      },
+      }),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       final data = json.decode(response.body)['data'];
       localDataSource.cacheUser(UserModel.fromJson(data['user']), data['token']);
       return UserModel.fromJson(data['user']);
     } else {
-      throw Exception("Failed to signup");
+      final Map<String, dynamic> errorBody = json.decode(response.body);
+      throw Exception("Failed to signup , response code: ${response.statusCode} , with message: ${errorBody['error']}");
     }
   }
 

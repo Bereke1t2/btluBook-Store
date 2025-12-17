@@ -129,7 +129,7 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
     request.files.add(
       await http.MultipartFile.fromPath(
         "cover_url",            // <-- must match backend field name
-        book.coverUrl!,
+        book.coverUrl,
       ),
     );
   
@@ -137,7 +137,7 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
     request.files.add(
       await http.MultipartFile.fromPath(
         "book_url",              // <-- must match backend field name
-        book.bookUrl!,
+        book.bookUrl,
       ),
     );
   

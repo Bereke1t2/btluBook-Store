@@ -19,11 +19,24 @@ class App extends StatelessWidget {
     return MaterialApp(
       routes: {
         "/": (_) => const SplashScrean(),
-        "/home": (_) => const HomePage(),
+        "/home": (context) {
+          final authState = context.read<AuthBloc>().state;
+          if (authState is LoginSuccess) {
+            return HomePage(user: authState.user);
+          }
+          print('User not authenticated, redirecting to login page. state: $authState');
+          return const LoginPage();
+        },
         "/login": (_) => const LoginPage(),
         "/signup": (_) => const SignupPage(),
         "/UploadPage": (_) => const UploadBookPage(),
-        "/profile": (_) => const UserProfilePage(),
+        "/profile": (context) {
+          final authState = context.read<AuthBloc>().state;
+          if (authState is Authenticated) {
+            return UserProfilePage(user: authState.user);
+          }
+          return const LoginPage();
+        },
         "/ChatPage": (_) =>
             const ChatPage(bookTitle: 'btluBook', isStudentBook: true),
       },
