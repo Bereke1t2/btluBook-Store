@@ -7,6 +7,7 @@ import 'package:ethio_book_store/features/books/presentation/pages/chat_page.dar
 import 'package:ethio_book_store/features/books/presentation/pages/home_page.dart';
 import 'package:ethio_book_store/features/books/presentation/pages/uploadscrean.dart';
 import 'package:ethio_book_store/features/books/presentation/pages/user_profile_page.dart';
+import 'package:ethio_book_store/features/chat/presentation/pages/chat_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';

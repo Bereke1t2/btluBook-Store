@@ -1,5 +1,5 @@
 class UrlConst {
-  static const String baseUrl = "http://10.240.68.66:8080";
+  static const String baseUrl = "http://192.168.0.201:8080";
 
 
   static const String loginEndpoint = "/auth/login";
