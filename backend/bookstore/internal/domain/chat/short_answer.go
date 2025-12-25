@@ -1,7 +1,7 @@
 package chat
 
 type ShortAnswer struct {
-	ID            string `json:"id"`
+	ID            int `json:"id"`
 	Question      string `json:"question"`
 	CorrectAnswer string `json:"correct_answer"`
 }

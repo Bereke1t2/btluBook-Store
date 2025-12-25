@@ -1,13 +1,9 @@
 package chat
 
 type MultipleQuiz struct {
-	ID            string   `json:"id"`
+	ID            int   `json:"id"`
 	Question      string   `json:"question"`
-	Options       []Option `json:"options"`
-	CorrectOption string   `json:"correct_option"`
-}
-type Option struct {
-	ID       string `json:"id"`
-	Text     string `json:"text"`
-	IsAnswer bool   `json:"is_answer"`
+	Options       []string `json:"options"`
+	CorrectIndex int   `json:"correct_index"`
+	Explanation  string `json:"explanation"`
 }

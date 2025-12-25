@@ -5,8 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine, bookHandler *handlers.BookHandler, userHandler *handlers.UserHandler) {
+func SetupRoutes(r *gin.Engine, bookHandler *handlers.BookHandler, userHandler *handlers.UserHandler , chatRouter *handlers.ChatHandler) {
 	RegisterBookRoutes(r, bookHandler)
 	RegisterUserRoutes(r, userHandler)
 	RegisterAuthRoutes(r, userHandler)
+	RegisterChatRoutes(r, chatRouter)
 }

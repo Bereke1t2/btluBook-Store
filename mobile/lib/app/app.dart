@@ -3,7 +3,6 @@ import 'package:ethio_book_store/features/auth/presentation/pages/login_page.dar
 import 'package:ethio_book_store/features/auth/presentation/pages/signup_page.dart';
 import 'package:ethio_book_store/features/auth/presentation/pages/splash_screan.dart';
 import 'package:ethio_book_store/features/books/presentation/bloc/book_bloc.dart';
-import 'package:ethio_book_store/features/books/presentation/pages/chat_page.dart';
 import 'package:ethio_book_store/features/books/presentation/pages/home_page.dart';
 import 'package:ethio_book_store/features/books/presentation/pages/uploadscrean.dart';
 import 'package:ethio_book_store/features/books/presentation/pages/user_profile_page.dart';

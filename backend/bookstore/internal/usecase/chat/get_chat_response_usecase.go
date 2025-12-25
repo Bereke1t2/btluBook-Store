@@ -16,7 +16,7 @@ func NewGetChatResponseUseCase(chatRepo chat.ChatRepository) *GetChatResponseUse
 	}
 }
 
-func (uc *GetChatResponseUseCase) Execute(chatID string, prompt string, bookName string) ([]*chat.ChatResponse, error) {
+func (uc *GetChatResponseUseCase) Execute(chatID int, prompt string, bookName string) (*chat.ChatResponse, error) {
 prompt = fmt.Sprintf(`
 You are a knowledgeable, concise AI book assistant in a bookstore app.
 
