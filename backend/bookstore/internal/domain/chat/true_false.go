@@ -3,5 +3,7 @@ package chat
 type TrueFalse struct {
 	ID       int `json:"id"`
 	Question string `json:"question"`
-	Answer   bool   `json:"answer"`
+	Answer   string   `json:"answer"`
+	Explanation string `json:"explanation"`
+
 }

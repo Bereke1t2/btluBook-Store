@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
+	// "strconv"
 
 	usecase "github.com/bereke1t2/bookstore/internal/usecase/chat"
 	"github.com/gin-gonic/gin"
@@ -30,20 +30,23 @@ func NewChatHandler(
 }
 
 func (h *ChatHandler) GetChatResponses(c *gin.Context) {
-	chatIDStr := c.Param("id")
-	chatID, err := strconv.Atoi(chatIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid chatID"})
+	chatID := 1
+	var body struct {
+		Prompt   string `json:"prompt" binding:"required"`
+		BookName string `json:"book_name" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
-	prompt := c.Query("prompt")
-	bookName := c.Query("book_name")
-
-	if prompt == "" || bookName == "" {
+	if body.Prompt == "" || body.BookName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required parameters"})
 		return
 	}
-	responses, err := h.GetChatResponsesUseCase.Execute(chatID, prompt, bookName)
+	responses, err := h.GetChatResponsesUseCase.Execute(chatID, body.Prompt, body.BookName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return

@@ -15,27 +15,21 @@ func NewGetChatResponseUseCase(chatRepo chat.ChatRepository) *GetChatResponseUse
 		chatRepo: chatRepo,
 	}
 }
-
 func (uc *GetChatResponseUseCase) Execute(chatID int, prompt string, bookName string) (*chat.ChatResponse, error) {
-prompt = fmt.Sprintf(`
-You are a knowledgeable, concise AI book assistant in a bookstore app.
+    // We wrap the user's prompt with system instructions
+	formattedPrompt := fmt.Sprintf(`
+You are the "Bookstore Concierge," a knowledgeable and friendly AI. 
+Your goal is to answer questions about the book "%s" for a customer.
 
-Book context:
-- Title: %s
+Constraints:
+1. Answer: "%s"
+2. Length: Maximum 120 words.
+3. Spoilers: Do NOT reveal major plot twists or endings. If the question asks for one, explain that you want to keep the reading experience fresh for them.
+4. Tone: Student-friendly, encouraging, and professional.
+5. Content: If you are unsure about a specific detail, provide a general conceptual answer rather than guessing.
 
-User question:
-"%s"
-
-Response rules:
-- Answer exactly what is asked
-- Use clear, student-friendly language
-- Do NOT include spoilers
-- If the question requires spoilers, answer at a high level only
-- If information is uncertain or unavailable, say so and stay general
-- Keep the response under 120 words
-
-Return only the answer.
+Return ONLY the text of your response. No headers, no JSON, no markdown.
 `, bookName, prompt)
 
-	return uc.chatRepo.GetChatResponses(chatID , prompt)
+	return uc.chatRepo.GetChatResponses(chatID, formattedPrompt)
 }

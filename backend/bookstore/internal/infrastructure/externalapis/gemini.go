@@ -112,8 +112,11 @@ func (r *ChatResponseImpl) GetTrueFalseQuestion(id string, prompt string) ([]*ch
 	r.geminiClient.model.SetMaxOutputTokens(2000)
 	r.geminiClient.model.ResponseMIMEType = "application/json"
 	resp, err := r.geminiClient.model.GenerateContent(r.geminiClient.ctx, genai.Text(prompt))
+
 	if err != nil { return nil, err }
-	quizzes, err := parseQuizzes[chat.TrueFalse](extractText(resp))
+	raw := extractText(resp)
+	print(raw)
+	quizzes, err := parseQuizzes[chat.TrueFalse](raw)
 	if err != nil { return nil, err }
 	result := make([]*chat.TrueFalse, len(quizzes))
 	for i := range quizzes { result[i] = &quizzes[i] }
@@ -125,7 +128,9 @@ func (r *ChatResponseImpl) GetShortAnswerQuestion(id string, prompt string) ([]*
 	r.geminiClient.model.ResponseMIMEType = "application/json"
 	resp, err := r.geminiClient.model.GenerateContent(r.geminiClient.ctx, genai.Text(prompt))
 	if err != nil { return nil, err }
-	quizzes, err := parseQuizzes[chat.ShortAnswer](extractText(resp))
+	raw := extractText(resp)
+	print(raw)
+	quizzes, err := parseQuizzes[chat.ShortAnswer](raw)
 	if err != nil { return nil, err }
 	result := make([]*chat.ShortAnswer, len(quizzes))
 	for i := range quizzes { result[i] = &quizzes[i] }

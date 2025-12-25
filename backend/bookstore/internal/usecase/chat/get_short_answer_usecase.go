@@ -6,7 +6,6 @@ import (
 	"github.com/bereke1t2/bookstore/internal/domain/chat"
 )
 
-
 type GetShortAnswerUseCase struct {
 	chatRepo chat.ChatRepository
 }
@@ -17,44 +16,35 @@ func NewGetShortAnswerUseCase(chatRepo chat.ChatRepository) *GetShortAnswerUseCa
 	}
 }
 
-
-func (uc *GetShortAnswerUseCase) Execute(id string , bookName string) ([]*chat.ShortAnswer, error) {
+func (uc *GetShortAnswerUseCase) Execute(id string, bookName string) ([]*chat.ShortAnswer, error) {
+	// Refined prompt for better JSON adherence and mandatory field population
 	prompt := fmt.Sprintf(`
-You are an AI assistant generating short-answer quizzes for a bookstore mobile app.
-
-Book context:
-- Title: %s
-- Author: %s
+Act as an expert literary professor. Generate a comprehensive short-answer quiz for the book titled "%s".
 
 Task:
-Generate %d short-answer quiz questions based on the book.
-Questions should test understanding of key ideas, themes, or concepts.
-Do NOT include spoilers unless they are general and non-plot-specific.
+Generate 10 challenging short-answer questions.
+For EVERY question, you MUST provide the correct answer and a detailed explanation.
 
 Rules:
-- Use clear, student-friendly language
-- Each question must have one concise answer
-- Provide a short explanation for each answer
-- Difficulty level: %s
-- If exact details are uncertain, stay general and conceptual
+1. ABSOLUTELY NO EMPTY FIELDS. Every "answer" and "explanation" field must be filled with high-quality content.
+2. Focus on themes, character motivations, and key concepts.
+3. Difficulty: Medium.
+4. Do not include markdown formatting (like `+"```json"+`) in the response, return raw text only.
 
-Output format:
-Return ONLY valid JSON in the following exact structure.
-Do NOT include markdown, comments, or extra text.
-
+Strict JSON Structure:
 {
   "book_title": "%s",
-  "difficulty": "%s",
+  "difficulty": "Medium",
   "quizzes": [
     {
       "id": 1,
-      "question": "string",
-      "answer": "string",
-      "explanation": "string"
+      "question": "The actual question text?",
+      "answer": "The concise correct answer.",
+      "explanation": "A 1-2 sentence explanation of why this is correct based on the book."
     }
   ]
 }
-`, bookName, bookName, 10, "Medium", bookName, "Medium")
+`, bookName, bookName)
 
-	return uc.chatRepo.GetShortAnswerQuestion(id , prompt)
+	return uc.chatRepo.GetShortAnswerQuestion(id, prompt)
 }
