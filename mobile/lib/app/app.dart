@@ -6,6 +6,7 @@ import 'package:ethio_book_store/features/books/presentation/bloc/book_bloc.dart
 import 'package:ethio_book_store/features/books/presentation/pages/home_page.dart';
 import 'package:ethio_book_store/features/books/presentation/pages/uploadscrean.dart';
 import 'package:ethio_book_store/features/books/presentation/pages/user_profile_page.dart';
+import 'package:ethio_book_store/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:ethio_book_store/features/chat/presentation/pages/chat_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -53,6 +54,9 @@ class App extends StatelessWidget {
             ),
             BlocProvider<BookBloc>(
               create: (_) => GetIt.I<BookBloc>(),
+            ),
+            BlocProvider<ChatBloc>(
+              create: (_) => GetIt.I<ChatBloc>(),
             ),
             // Add another bloc like this:
             // BlocProvider<YourBloc>(
