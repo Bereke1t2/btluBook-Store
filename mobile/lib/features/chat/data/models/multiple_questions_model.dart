@@ -18,7 +18,7 @@ class MultipleQuestionsModel extends MultipleQuestions {
       question: json['question'],
       options: List<String>.from(json['options']),
       correctIndex: json['correct_index'],
-      explanations: json['explanations'],
+      explanations: json['explanation'],
     );
   }
 

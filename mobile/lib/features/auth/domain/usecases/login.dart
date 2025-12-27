@@ -9,6 +9,7 @@ class Login {
 
   Login({required this.userRepository});
   Future<Either<Failure, User>> call(String email, String password) {
+    print('Login usecase called with email: $email');
     return userRepository.login(email, password);
   }
 }

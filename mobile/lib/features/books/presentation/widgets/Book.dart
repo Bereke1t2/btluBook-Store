@@ -105,9 +105,9 @@ class QuickLookSheet extends StatelessWidget {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        icon: const Icon(Icons.add_shopping_cart_rounded),
+                        icon: const Icon(Icons.chat_bubble_outline),
                         label: const Text(
-                          'Add to cart',
+                          'GO to Chat',
                           style: TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),

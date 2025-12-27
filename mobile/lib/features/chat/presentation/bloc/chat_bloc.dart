@@ -35,7 +35,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     emit(GetChatResponseLoadingState());
-    final failureOrResponse = await chatResponseUC(event.prompt);
+    final failureOrResponse = await chatResponseUC(event.prompt , event.bookName);
     failureOrResponse.fold(
       (failure) => emit(GetChatResponseFaliurState(failure.message)),
       (response) => emit(GetChatResponseSuccessState(response)),

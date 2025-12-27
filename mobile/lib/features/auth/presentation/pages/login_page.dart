@@ -35,7 +35,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   }
 
   Future<void> _submit() async {
+    print('Submitting login form');
     if (!_formKey.currentState!.validate()) return;
+
     try {
       if (!mounted) return;
       context.read<AuthBloc>().add(

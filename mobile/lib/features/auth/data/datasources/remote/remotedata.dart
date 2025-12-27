@@ -22,7 +22,10 @@ class RemoteDataSourceImpl implements RemoteData {
 
 @override
 Future<UserModel> login(String email, String password) async {
+  print('Attempting to login with email: $email');
   try {
+    print('Preparing HTTP POST request for login');
+    print('URL: ${UrlConst.baseUrl}${UrlConst.loginEndpoint}');
     final response = await httpClient.post(
       Uri.parse("${UrlConst.baseUrl}${UrlConst.loginEndpoint}"),
       headers: {
@@ -35,7 +38,7 @@ Future<UserModel> login(String email, String password) async {
         },
       ),
     );
-
+    print('Received response with status code: ${response.statusCode}');
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body);
       final token = decoded['data']['token'];

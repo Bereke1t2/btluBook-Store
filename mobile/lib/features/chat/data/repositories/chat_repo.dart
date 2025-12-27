@@ -19,10 +19,10 @@ class ChatRepositoryImpl implements ChatRepository {
     required this.networkInfo,
   });
   @override
-  Future<Either<Failure, String>> getChatResponse(String prompt) async {
+  Future<Either<Failure, String>> getChatResponse(String prompt , String bookName) async {
     if (await networkInfo.isConnected) {
       try {
-        final remoteResponse = await remoteDataSource.getChatResponse(prompt);
+        final remoteResponse = await remoteDataSource.getChatResponse(prompt , bookName);
         localDataSource.cacheChatResponse(remoteResponse);
         return Right(remoteResponse);
       } catch (e) {

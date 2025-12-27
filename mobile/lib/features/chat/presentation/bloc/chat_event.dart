@@ -5,8 +5,9 @@ sealed class ChatEvent {}
 
 class GetChatResponseEvent extends ChatEvent {
   final String prompt;
+  final String bookName;
 
-  GetChatResponseEvent(this.prompt);
+  GetChatResponseEvent(this.prompt , this.bookName);
 }
 class GetTrueFalseQuestionEvent extends ChatEvent {
   final String bookName;

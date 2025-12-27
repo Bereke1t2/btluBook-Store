@@ -7,7 +7,7 @@ class GetChatResponseUseCase {
 
   GetChatResponseUseCase(this.repository);
 
-  Future<Either<Failure, String>> call(String prompt) {
-    return repository.getChatResponse(prompt);
+  Future<Either<Failure, String>> call(String prompt , String bookName) {
+    return repository.getChatResponse(prompt , bookName);
   }
 }

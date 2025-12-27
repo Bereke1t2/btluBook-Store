@@ -38,8 +38,17 @@ class App extends StatelessWidget {
           }
           return const LoginPage();
         },
-        "/ChatPage": (_) =>
-            const ChatPage(bookTitle: 'btluBook', isStudentBook: true),
+        "/ChatPage": (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+          final bookTitle = args?['bookTitle'] as String? ?? 'books';
+          final isStudentBook = args?['isStudentBook'] as bool? ?? true;
+
+          return ChatPage(
+            bookTitle: bookTitle,
+            isStudentBook: isStudentBook,
+          );
+        },
       },
       initialRoute: "/",
       builder: (context, child) {

@@ -75,12 +75,12 @@ func main() {
 
 	srv := &http.Server{
 		Handler:      r,
-		Addr:         "0.0.0.0:8080",
+		Addr:         "0.0.0.0:9090",
 		WriteTimeout: 120 * time.Second,
 		ReadTimeout:  120 * time.Second,
 	}
 
-	log.Println("Starting server on :8080")
+	log.Println("Starting server on :9090")
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}

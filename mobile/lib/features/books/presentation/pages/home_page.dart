@@ -9,6 +9,7 @@ import 'package:ethio_book_store/features/books/presentation/widgets/category.da
 import 'package:ethio_book_store/features/books/presentation/widgets/coverImage.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/header.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/rating.dart';
+import 'package:ethio_book_store/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -619,10 +620,13 @@ class _HomePageState extends State<HomePage>
       builder: (_) => QuickLookSheet(
         book: book,
         onAddToCart: () {
-          Navigator.pop(context);
+            Navigator.of(context).pushReplacementNamed(
+            "/ChatPage",
+            arguments: {"bookTitle": book.title},
+            );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Added "${book.title}" to cart'),
+              content: Text('now you can chat about "${book.title}"'),
               behavior: SnackBarBehavior.floating,
             ),
           );
