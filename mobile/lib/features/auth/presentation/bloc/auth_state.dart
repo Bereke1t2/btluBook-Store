@@ -51,3 +51,14 @@ final class LogoutFailure extends AuthState {
   final String message;
   LogoutFailure({required this.message});
 }
+
+
+final class UpdateProfileLoading extends AuthState {}
+final class UpdateProfileSuccess extends AuthState {
+  final User user;
+  UpdateProfileSuccess({required this.user});
+}
+final class UpdateProfileFailure extends AuthState {
+  final String message;
+  UpdateProfileFailure({required this.message});
+}

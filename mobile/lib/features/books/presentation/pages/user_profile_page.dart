@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:ethio_book_store/features/auth/domain/entities/user.dart';
 import 'package:ethio_book_store/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:ethio_book_store/features/books/presentation/bloc/book_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -161,11 +162,9 @@ class _UserProfilePageState extends State<UserProfilePage>
                 }
               } else if (state is LogoutSuccess) {
                 Navigator.of(context).pushReplacementNamed('/login');
-              }else if (state is LogoutFailure) {
+              } else if (state is LogoutFailure) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Logout failed: ${state.message}'),
-                  ),
+                  SnackBar(content: Text('Logout failed: ${state.message}')),
                 );
               }
             },
@@ -248,13 +247,18 @@ class _UserProfilePageState extends State<UserProfilePage>
                                       ],
                                     ),
                                     const SizedBox(height: 14),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: _primaryButton(
-                                        label: 'Save',
-                                        icon: Icons.save_rounded,
-                                        onTap: _saveAccount,
-                                      ),
+                                    BlocBuilder<AuthBloc, AuthState>(
+                                      builder: (context, state) {
+                                        return Align(
+                                          alignment: Alignment.centerRight,
+                                          child: _primaryButton(
+                                            label: 'Save',
+                                            icon: Icons.save_rounded,
+                                            onTap: _saveAccount,
+                                            state: state,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -344,11 +348,20 @@ class _UserProfilePageState extends State<UserProfilePage>
                                           const SizedBox(height: 12),
                                           Align(
                                             alignment: Alignment.centerRight,
-                                            child: _primaryButton(
-                                              label: 'Update',
-                                              icon: Icons.check_rounded,
-                                              onTap: _updatePassword,
-                                            ),
+                                            child:
+                                                BlocBuilder<
+                                                  AuthBloc,
+                                                  AuthState
+                                                >(
+                                                  builder: (context, state) {
+                                                    return _primaryButton(
+                                                      state: state,
+                                                      label: 'Update',
+                                                      icon: Icons.check_rounded,
+                                                      onTap: _updatePassword,
+                                                    );
+                                                  },
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -457,7 +470,7 @@ class _UserProfilePageState extends State<UserProfilePage>
 
                                     BlocBuilder<AuthBloc, AuthState>(
                                       builder: (context, state) {
-                                        if (state is LogoutLoading){
+                                        if (state is LogoutLoading) {
                                           return const Center(
                                             child: CircularProgressIndicator(),
                                           );
@@ -804,21 +817,42 @@ class _UserProfilePageState extends State<UserProfilePage>
     required String label,
     required IconData icon,
     required VoidCallback onTap,
+    required AuthState state,
   }) {
+    final isLoading = state is UpdateProfileLoading;
+    final isFailure = state is UpdateProfileFailure;
+
     return SizedBox(
       height: 44,
-      child: ElevatedButton.icon(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _gold,
-          foregroundColor: Colors.black,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        icon: Icon(icon),
-        label: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
-      ),
+      child: isFailure
+          ? Text(
+              'Failed to update profile ${state is UpdateProfileFailure ? (state as UpdateProfileFailure).message : ''}',
+              style: const TextStyle(color: Colors.red),
+            )
+          : ElevatedButton.icon(
+              onPressed: isLoading ? null : onTap,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _gold,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              icon: isLoading ? null : Icon(icon),
+              label: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.black,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : Text(
+                      label,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+            ),
     );
   }
 
@@ -888,10 +922,19 @@ class _UserProfilePageState extends State<UserProfilePage>
       _toast('Enter a valid username and email.');
       return;
     }
-    await _withProgress(() async {
-      // TODO: call backend to update users.username, users.email, users.profile_image
-      await Future<void>.delayed(const Duration(milliseconds: 800));
-    });
+    context.read<AuthBloc>().add(
+      UpdateProfileRequested(
+        user: User(
+          id: widget.user.id,
+          username: _usernameCtrl.text.trim(),
+          email: _emailCtrl.text.trim(),
+          profileImage: _profileImage,
+          passwordHash: widget.user.passwordHash,
+          createdAt: widget.user.createdAt,
+          updatedAt: DateTime.now(),
+        ),
+      ),
+    );
     _toast('Account saved');
     setState(() {});
   }
@@ -904,10 +947,19 @@ class _UserProfilePageState extends State<UserProfilePage>
       _toast('Check your password fields.');
       return;
     }
-    await _withProgress(() async {
-      // TODO: call backend to update users.password_hash
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-    });
+    context.read<AuthBloc>().add(
+      UpdateProfileRequested(
+        user: User(
+          id: widget.user.id,
+          username: _usernameCtrl.text.trim(),
+          email: _emailCtrl.text.trim(),
+          profileImage: _profileImage,
+          passwordHash: _newPassCtrl.text.trim(),
+          createdAt: widget.user.createdAt,
+          updatedAt: DateTime.now(),
+        ),
+      ),
+    );
     _currentPassCtrl.clear();
     _newPassCtrl.clear();
     _confirmPassCtrl.clear();
@@ -981,24 +1033,36 @@ class _UserProfilePageState extends State<UserProfilePage>
                       ),
                     ),
                     const SizedBox(width: 10),
-                    _primaryButton(
-                      label: 'Apply',
-                      icon: Icons.check_rounded,
-                      onTap: () async {
-                        final url = urlCtrl.text.trim();
-                        if (url.isEmpty) {
-                          _toast('Enter a valid image URL.');
-                          return;
-                        }
-                        await _withProgress(() async {
-                          // TODO: call backend to update users.profile_image
-                          await Future<void>.delayed(
-                            const Duration(milliseconds: 500),
-                          );
-                        });
-                        setState(() => _profileImage = url);
-                        Navigator.pop(context);
-                        _toast('Profile photo updated');
+                    BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, state) {
+                        return _primaryButton(
+                          label: 'Apply',
+                          icon: Icons.check_rounded,
+                          state: state,
+                          onTap: () async {
+                            final url = urlCtrl.text.trim();
+                            if (url.isEmpty) {
+                              _toast('Enter a valid image URL.');
+                              return;
+                            }
+                            context.read<AuthBloc>().add(
+                              UpdateProfileRequested(
+                                user: User(
+                                  id: widget.user.id,
+                                  username: _usernameCtrl.text.trim(),
+                                  email: _emailCtrl.text.trim(),
+                                  profileImage: _profileImage,
+                                  passwordHash: widget.user.passwordHash,
+                                  createdAt: widget.user.createdAt,
+                                  updatedAt: DateTime.now(),
+                                ),
+                              ),
+                            );
+                            setState(() => _profileImage = url);
+                            Navigator.pop(context);
+                            _toast('Profile photo updated');
+                          },
+                        );
                       },
                     ),
                   ],
@@ -1128,10 +1192,15 @@ class _UserProfilePageState extends State<UserProfilePage>
                               label: confirmLabel,
                               onTap: () => Navigator.pop(context, true),
                             )
-                          : _primaryButton(
-                              label: confirmLabel,
-                              icon: Icons.check_rounded,
-                              onTap: () => Navigator.pop(context, true),
+                          : BlocBuilder<AuthBloc, AuthState>(
+                              builder: (context, state) {
+                                return _primaryButton(
+                                  state: state,
+                                  label: confirmLabel,
+                                  icon: Icons.check_rounded,
+                                  onTap: () => Navigator.pop(context, true),
+                                );
+                              },
                             ),
                     ),
                   ],

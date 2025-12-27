@@ -6,7 +6,6 @@ import 'package:ethio_book_store/features/chat/domain/usecases/getMultipleQeusti
 import 'package:ethio_book_store/features/chat/domain/usecases/getResponseUsecase.dart';
 import 'package:ethio_book_store/features/chat/domain/usecases/getShortAnswerUseacase.dart';
 import 'package:ethio_book_store/features/chat/domain/usecases/getTrueFalseUsecase.dart';
-import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 
 part 'chat_event.dart';

@@ -893,9 +893,9 @@ class _QuizSheetMultipleChoiceState extends State<QuizSheetMultipleChoice> {
                       ),
                     ),
                   ),
-                if (locked && q.explanations != null && q.explanations!.isNotEmpty) ...[
+                if (locked && q.explanations.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text('Explanation: ${q.explanations!}', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                  Text('Explanation: ${q.explanations}', style: const TextStyle(color: Colors.white70, fontSize: 13)),
                 ],
               ],
             ),

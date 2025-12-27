@@ -9,7 +9,6 @@ import 'package:ethio_book_store/features/books/presentation/widgets/category.da
 import 'package:ethio_book_store/features/books/presentation/widgets/coverImage.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/header.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/rating.dart';
-import 'package:ethio_book_store/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -191,7 +190,7 @@ class _HomePageState extends State<HomePage>
                         parent: AlwaysScrollableScrollPhysics(),
                       ),
                       slivers: [
-                        SliverToBoxAdapter(child: Header(context)),
+                        SliverToBoxAdapter(child: Header(context , widget.user)),
                         SliverToBoxAdapter(child: _buildSearch()),
                         SliverToBoxAdapter(child: _buildCategories()),
 

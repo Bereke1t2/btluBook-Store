@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:ethio_book_store/features/auth/domain/usecases/login.dart';
+import 'package:ethio_book_store/features/auth/domain/usecases/update_prifile_usecase.dart';
 import 'package:meta/meta.dart';
 
 import '../../domain/entities/user.dart';
@@ -15,11 +16,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final Signup signupUseCase;
   final Logout logoutUseCase;
   final CheckAuthStatus checkAuthStatusUseCase;
+  final UpdateProfile updateProfileUseCase;
   AuthBloc({
     required this.loginUseCase,
     required this.signupUseCase,
     required this.logoutUseCase,
     required this.checkAuthStatusUseCase,
+    required this.updateProfileUseCase,
   }) : super(AuthInitial()) {
     on<CheckAuthStatusEvent>((event, emit) async {
       emit(AuthLoading());
@@ -51,6 +54,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       result.fold(
         (failure) => emit(LogoutFailure(message: failure.message)),
         (_) => emit(LogoutSuccess()),
+      );
+    });
+    on<UpdateProfileRequested>((event, emit) async {
+      emit(UpdateProfileLoading());
+      final result = await updateProfileUseCase(event.user);
+      result.fold(
+        (failure) => emit(UpdateProfileFailure(message: failure.message)),
+        (user) => emit(UpdateProfileSuccess(user: user)),
       );
     });
   }

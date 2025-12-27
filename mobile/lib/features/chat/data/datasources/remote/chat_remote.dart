@@ -1,9 +1,7 @@
 import 'dart:convert';
 
-import 'package:ethio_book_store/app/app.dart';
 import 'package:ethio_book_store/core/const/url_const.dart';
 import 'package:ethio_book_store/features/auth/data/datasources/local/localdata.dart';
-import 'package:ethio_book_store/features/books/data/local_database/app_database.dart';
 import 'package:ethio_book_store/features/chat/data/datasources/local/chat_local.dart';
 import 'package:ethio_book_store/features/chat/domain/entities/multiple_questions.dart';
 import 'package:ethio_book_store/features/chat/domain/entities/short_answer.dart';

@@ -38,6 +38,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
   }
 
+  @override
   Future<Either<Failure, List<TrueFalse>>> getTrueFalseQuestion(String bookName) async {
     if (await networkInfo.isConnected) {
       try {
@@ -58,6 +59,7 @@ class ChatRepositoryImpl implements ChatRepository {
       }
     }
   }
+  @override
   Future<Either<Failure, List<MultipleQuestions>>> getMultipleQuestions(String bookName) async {
     if (await networkInfo.isConnected) {
       try {
@@ -78,6 +80,7 @@ class ChatRepositoryImpl implements ChatRepository {
       }
     }
   }
+  @override
   Future<Either<Failure, List<ShortAnswer>>> getShortAnswerQuestion(String bookName) async {
     if (await networkInfo.isConnected) {
       try {

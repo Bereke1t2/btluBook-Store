@@ -1,16 +1,12 @@
 import 'package:ethio_book_store/features/chat/domain/entities/true_false.dart';
 
 class TrueFalseModel extends TrueFalse {
-  TrueFalseModel({
-    required String question,
-    required String answer,
-    required String explanation,
+  const TrueFalseModel({
+    required super.question,
+    required super.answer,
+    required super.explanation,
 
-  }) : super(
-          question: question,
-          answer: answer,
-          explanation: explanation,
-        );
+  });
 
   factory TrueFalseModel.fromJson(Map<String, dynamic> json) {
     return TrueFalseModel(

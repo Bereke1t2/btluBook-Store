@@ -12,6 +12,7 @@ abstract class RemoteData {
   Future<UserModel> signup(String email, String password, String username);
   Future<void> logout();
   Future<UserModel> getCurrentUser(String token);
+  Future<UserModel> updateProfile(UserModel user);
 }
 
 class RemoteDataSourceImpl implements RemoteData {
@@ -111,6 +112,27 @@ Future<UserModel> login(String email, String password) async {
     }
      else {
       throw Exception("Failed to fetch current user");
+    }
+  }
+
+  @override
+  Future<UserModel> updateProfile(UserModel user) async {
+    final response = await httpClient.put(
+      Uri.parse("${UrlConst.baseUrl}${UrlConst.updateProfileEndpoint}/${user.id}"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ${localDataSource.getToken()}",
+      },
+      body: json.encode(user.toJson()),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body)['data'];
+      final updatedUser = UserModel.fromJson(data);
+      localDataSource.cacheUser(updatedUser, localDataSource.getToken()! as String);
+      return updatedUser;
+    } else {
+      throw Exception("Failed to update profile with response code: ${response.statusCode}");
     }
   }
 }

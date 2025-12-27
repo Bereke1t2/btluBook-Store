@@ -36,6 +36,13 @@ class App extends StatelessWidget {
           if (authState is Authenticated) {
             return UserProfilePage(user: authState.user);
           }
+
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final user = args?['user'];
+          if (user != null) {
+            return UserProfilePage(user: user);
+          }
+
           return const LoginPage();
         },
         "/ChatPage": (context) {

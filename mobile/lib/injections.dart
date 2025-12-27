@@ -8,6 +8,7 @@ import 'package:ethio_book_store/features/auth/domain/usecases/check_auth_status
 import 'package:ethio_book_store/features/auth/domain/usecases/login.dart';
 import 'package:ethio_book_store/features/auth/domain/usecases/logout.dart';
 import 'package:ethio_book_store/features/auth/domain/usecases/signup.dart';
+import 'package:ethio_book_store/features/auth/domain/usecases/update_prifile_usecase.dart';
 import 'package:ethio_book_store/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:ethio_book_store/features/books/data/datasources/local/bookLocal.dart';
 import 'package:ethio_book_store/features/books/data/datasources/remote/book_remote_data_source.dart';
@@ -41,6 +42,7 @@ Future<void> init() async {
      signupUseCase: sl(),
      logoutUseCase: sl(),
      checkAuthStatusUseCase: sl(),
+      updateProfileUseCase: sl(),
    ));
 
    sl.registerFactory(() => BookBloc(
@@ -61,6 +63,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => Login(userRepository:  sl()));
   sl.registerLazySingleton(() => Logout(userRepository:  sl()));
   sl.registerLazySingleton(() => Signup(userRepository:  sl()));
+  sl.registerLazySingleton(() => UpdateProfile(repository: sl()));
 
   sl.registerLazySingleton(() => GetBookUseCase(repository: sl()));
   sl.registerLazySingleton(() => GetBooksUseCase(repository: sl()));

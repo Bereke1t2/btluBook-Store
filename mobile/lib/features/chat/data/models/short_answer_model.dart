@@ -1,15 +1,11 @@
 import 'package:ethio_book_store/features/chat/domain/entities/short_answer.dart';
 
 class ShortAnswerModel extends ShortAnswer{
-  ShortAnswerModel({
-    required String question,
-    required String answer,
-    required String explanation,
-  }) : super(
-          question: question,
-          answer: answer,
-          explanation: explanation,
-        );
+  const ShortAnswerModel({
+    required super.question,
+    required super.answer,
+    required super.explanation,
+  });
 
   factory ShortAnswerModel.fromJson(Map<String, dynamic> json) {
     return ShortAnswerModel(

@@ -1,17 +1,19 @@
- import 'package:ethio_book_store/features/books/presentation/widgets/GlassBtnIcon.dart';
+import 'package:ethio_book_store/features/auth/domain/entities/user.dart';
+import 'package:ethio_book_store/features/books/presentation/pages/user_profile_page.dart';
+import 'package:ethio_book_store/features/books/presentation/widgets/GlassBtnIcon.dart';
 import 'package:flutter/material.dart';
 
-Widget Header(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
+Widget Header(BuildContext context , User user) {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+    child: Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
                 colors: [Color(0xFFF2C94C), Color(0xFFD4A373)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -56,7 +58,10 @@ Widget Header(BuildContext context) {
           GlassIconBtn(
             icon: Icons.person_outline_rounded,
             onTap: () {
-              Navigator.pushNamed(context, '/profile');
+               Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => UserProfilePage(user: user)),
+                );
             },
           ),
         ],

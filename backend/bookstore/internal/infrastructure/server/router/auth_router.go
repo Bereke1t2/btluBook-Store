@@ -11,7 +11,7 @@ func RegisterAuthRoutes(r *gin.Engine, userHandler *handlers.UserHandler) {
 	{
 		auth.POST("/login", userHandler.LoginUser)
 		auth.POST("/signup", userHandler.CreateUser)
-		
+		auth.POST("/users/update/:id", userHandler.UpdateUser)
 	}
 	
 }

@@ -67,4 +67,20 @@ class UserModel extends User {
       return null;
     }
   }
+
+  static UserModel fromEntity(User user) {
+    return UserModel(
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      passwordHash: user.passwordHash,
+      profileImage: user.profileImage,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      booksReadCount: user.booksReadCount,
+      readingStreak: user.readingStreak,
+      lastReadDate: user.lastReadDate,
+      points: user.points,
+    );
+  }
 }

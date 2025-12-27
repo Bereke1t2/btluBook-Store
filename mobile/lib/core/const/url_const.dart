@@ -20,5 +20,6 @@ class UrlConst {
   static const String shortAnswerQuestionsEndpoint = "/chats/questions/short-answer";
 
   static const String userProfileEndpoint ="/users";
+  static const String updateProfileEndpoint ="auth/users/update";
 
 }

@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:ethio_book_store/features/auth/data/models/user.dart';
+import 'package:ethio_book_store/features/auth/domain/entities/user.dart';
 
 import '../../../../core/connection/network.dart';
 import '../../../../core/errors/failure.dart';
@@ -75,6 +76,19 @@ class UserRepositoryImpl implements UserRepository {
         return Right(user);
       } catch (e) {
         return Left(CacheFailure(e.toString()));
+      }
+    } else {
+      return Left(NetworkFailure("No internet connection"));
+    }
+  }
+  @override
+  Future<Either<Failure, UserModel>> updateProfile(User user) async {
+    if (await networkInfo.isConnected) {
+      try {
+        final updatedUser = await remoteDataSource.updateProfile(UserModel.fromEntity(user));
+        return Right(updatedUser);
+      } catch (e) {
+        return Left(ServerFailure(e.toString()));
       }
     } else {
       return Left(NetworkFailure("No internet connection"));
