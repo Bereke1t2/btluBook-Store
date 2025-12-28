@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	bookUser "github.com/bereke1t2/bookstore/internal/domain/user"
 	"github.com/bereke1t2/bookstore/internal/infrastructure/security"
@@ -125,26 +126,113 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 func (h *UserHandler) UpdateUser(c *gin.Context) {
-	// Adjusted to match Router: PUT /users/:id
+	print("UpdateUser called\n")
+	// PUT /users/:id
 	id := c.Param("id")
 
-	// Parse id as integer
 	parsedID, err := strconv.Atoi(id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
 		return
 	}
 
-	var updatedUser bookUser.User
-	if err := c.ShouldBindJSON(&updatedUser); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// Accept partial updates, map only allowed fields
+	var input struct {
+		Username     *string `json:"username"`
+		Email        *string `json:"email"`
+		Password     *string `json:"passwordHash"`
+		ProfileImage *string `json:"profile_image"`
+		// numeric fields are optional; if provided, use them
+		BooksReadCount *int `json:"books_read_count"`
+		ReadingStreak  *int `json:"reading_streak"`
+		Points         *int `json:"points"`
+		// lastReadDate optional RFC3339
+		LastReadDate *string `json:"last_read_date"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request payload: " + err.Error()})
 		return
 	}
 
-	// Ensure the ID from the URL overrides any ID sent in the body (security best practice)
-	updatedUser.ID = parsedID
+	// Load existing user
+	prev, err := h.getUsersByIDUseCase.Execute(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if prev.ID == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
 
-	user, err := h.updateUserUseCase.Execute(updatedUser)
+	updated := bookUser.User{
+		ID:             parsedID,
+		Username:       prev.Username,
+		Email:          prev.Email,
+		PasswordHash:   prev.PasswordHash,
+		ProfileImage:   prev.ProfileImage,
+		CreatedAt:      prev.CreatedAt,
+		UpdatedAt:      prev.UpdatedAt,
+		BooksReadCount: prev.BooksReadCount,
+		ReadingStreak:  prev.ReadingStreak,
+		LastReadDate:   prev.LastReadDate,
+		Points:         prev.Points,
+	}
+
+	// Apply changes if provided
+	if input.Username != nil {
+		updated.Username = *input.Username
+	}
+	if input.Email != nil {
+		updated.Email = *input.Email
+	}
+	if input.Password != nil {
+		hashedPassword, err := security.HashPassword(*input.Password)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
+			return
+		}
+		updated.PasswordHash = string(hashedPassword)
+	}
+	if input.ProfileImage != nil {
+		// normalize: empty string -> nil
+		if *input.ProfileImage == "" {
+			updated.ProfileImage = nil
+		} else {
+			pi := *input.ProfileImage
+			updated.ProfileImage = &pi
+		}
+	}
+	if input.BooksReadCount != nil {
+		updated.BooksReadCount = *input.BooksReadCount
+	}
+	if input.ReadingStreak != nil {
+		updated.ReadingStreak = *input.ReadingStreak
+	}
+	if input.Points != nil {
+		updated.Points = *input.Points
+	}
+	if input.LastReadDate != nil {
+		if *input.LastReadDate == "" {
+			updated.LastReadDate = nil
+		} else {
+			t, err := time.Parse(time.RFC3339, *input.LastReadDate)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid lastReadDate format, must be RFC3339"})
+				return
+			}
+			updated.LastReadDate = &t
+		}
+	}
+
+	// Always update UpdatedAt to now
+	updated.UpdatedAt = time.Now()
+	if updated.CreatedAt.IsZero() {
+		updated.CreatedAt = time.Now()
+	}
+
+	user, err := h.updateUserUseCase.Execute(updated)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -158,8 +246,6 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 }
 
 func (h *UserHandler) GetUserByID(c *gin.Context) {
-	// Original code used Query param, but Router defined /users/:id
-	// So we must use c.Param
 	id := c.Param("id")
 
 	user, err := h.getUsersByIDUseCase.Execute(id)
@@ -186,13 +272,12 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&loginRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request payload: " + err.Error()})
 		return
 	}
 
-	user, token ,  err := h.loginUseCase.Execute(loginRequest.Email, loginRequest.Password)
+	user, token, err := h.loginUseCase.Execute(loginRequest.Email, loginRequest.Password)
 	if err != nil {
-		// Use StatusUnauthorized (401) for login failures
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}

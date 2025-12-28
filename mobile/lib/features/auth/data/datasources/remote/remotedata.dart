@@ -117,22 +117,28 @@ Future<UserModel> login(String email, String password) async {
 
   @override
   Future<UserModel> updateProfile(UserModel user) async {
-    final response = await httpClient.put(
+    try{
+      final token = await localDataSource.getToken();
+      final response = await httpClient.put(
       Uri.parse("${UrlConst.baseUrl}${UrlConst.updateProfileEndpoint}/${user.id}"),
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer ${localDataSource.getToken()}",
+        "Authorization": token ?? "",
       },
       body: json.encode(user.toJson()),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 || response.statusCode == 400 || response.statusCode == 201) {
       final data = json.decode(response.body)['data'];
-      final updatedUser = UserModel.fromJson(data);
-      localDataSource.cacheUser(updatedUser, localDataSource.getToken() as String);
+      final updatedUser = UserModel.fromJson(data['user']);
+      final token = await localDataSource.getToken();
+      localDataSource.cacheUser(updatedUser, token ?? "there is no token");
       return updatedUser;
     } else {
       throw Exception("Failed to update profile with response code: ${response.statusCode}");
+    }
+  } catch (e) {
+    throw Exception("Failed to update profile: $e");
     }
   }
 }

@@ -348,20 +348,74 @@ class _UserProfilePageState extends State<UserProfilePage>
                                           const SizedBox(height: 12),
                                           Align(
                                             alignment: Alignment.centerRight,
-                                            child:
-                                                BlocBuilder<
-                                                  AuthBloc,
-                                                  AuthState
-                                                >(
-                                                  builder: (context, state) {
-                                                    return _primaryButton(
-                                                      state: state,
-                                                      label: 'Update',
-                                                      icon: Icons.check_rounded,
-                                                      onTap: _updatePassword,
-                                                    );
-                                                  },
-                                                ),
+                                            child: BlocConsumer<AuthBloc, AuthState>(
+                                              listener: (context, state) {
+                                                final media = MediaQuery.of(
+                                                  context,
+                                                );
+
+                                                if (state is LogoutSuccess) {
+                                                  Navigator.of(
+                                                    context,
+                                                  ).pushReplacementNamed(
+                                                    '/login',
+                                                  );
+                                                  showFancySnackBar(
+                                                    context: context,
+                                                    media: media,
+                                                    message: 'Logged out',
+                                                    accent: _gold,
+                                                    icon: Icons.logout_rounded,
+                                                  );
+                                                } else if (state
+                                                    is LogoutFailure) {
+                                                  showFancySnackBar(
+                                                    context: context,
+                                                    media: media,
+                                                    message:
+                                                        'Logout failed: ${state.message}',
+                                                    accent: Colors.redAccent,
+                                                    icon: Icons
+                                                        .error_outline_rounded,
+                                                  );
+                                                } else if (state
+                                                    is UpdateProfileSuccess) {
+                                                  showFancySnackBar(
+                                                    context: context,
+                                                    media: media,
+                                                    message:
+                                                        'Successfully updated',
+                                                    accent: const Color(
+                                                      0xFFA1E3B5,
+                                                    ), // soft green used on page
+                                                    icon: Icons
+                                                        .check_circle_rounded,
+                                                  );
+                                                  _currentPassCtrl.clear();
+                                                  _newPassCtrl.clear();
+                                                  _confirmPassCtrl.clear();
+                                                } else if (state
+                                                    is UpdateProfileFailure) {
+                                                  showFancySnackBar(
+                                                    context: context,
+                                                    media: media,
+                                                    message:
+                                                        'We’re unable to process this request right now. Please try again later.',
+                                                    accent: Colors.redAccent,
+                                                    icon: Icons
+                                                        .error_outline_rounded,
+                                                  );
+                                                }
+                                              },
+                                              builder: (context, state) {
+                                                return _primaryButton(
+                                                  state: state,
+                                                  label: 'Update',
+                                                  icon: Icons.check_rounded,
+                                                  onTap: _updatePassword,
+                                                );
+                                              },
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -819,8 +873,8 @@ class _UserProfilePageState extends State<UserProfilePage>
     required VoidCallback onTap,
     required AuthState state,
   }) {
-    final isLoading = state is UpdateProfileLoading;
-    final isFailure = state is UpdateProfileFailure;
+    final isLoading = state is UpdateProfileLoading || state is LogoutLoading;
+    final isFailure = state is UpdateProfileFailure || state is LogoutFailure;
 
     return SizedBox(
       height: 44,
@@ -935,7 +989,6 @@ class _UserProfilePageState extends State<UserProfilePage>
         ),
       ),
     );
-    _toast('Account saved');
     setState(() {});
   }
 
@@ -963,7 +1016,6 @@ class _UserProfilePageState extends State<UserProfilePage>
     _currentPassCtrl.clear();
     _newPassCtrl.clear();
     _confirmPassCtrl.clear();
-    _toast('Password updated');
   }
 
   void _logout() async {
@@ -974,7 +1026,6 @@ class _UserProfilePageState extends State<UserProfilePage>
     );
     if (ok) {
       context.read<AuthBloc>().add(LogoutRequested());
-      _toast('Logged out');
     }
   }
 
@@ -1060,7 +1111,6 @@ class _UserProfilePageState extends State<UserProfilePage>
                             );
                             setState(() => _profileImage = url);
                             Navigator.pop(context);
-                            _toast('Profile photo updated');
                           },
                         );
                       },
@@ -1081,7 +1131,6 @@ class _UserProfilePageState extends State<UserProfilePage>
                       });
                       setState(() => _profileImage = null);
                       Navigator.pop(context);
-                      _toast('Photo removed');
                     },
                   ),
                 ),
@@ -1385,4 +1434,55 @@ class _GlassExpansionTileState extends State<_GlassExpansionTile> {
       child: Icon(icon, color: Colors.white),
     );
   }
+}
+
+void showFancySnackBar({
+  required BuildContext context,
+  required MediaQueryData media,
+  required String message,
+  required Color accent,
+  required IconData icon,
+}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      elevation: 0,
+      margin: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        // push it near the top area
+        bottom: media.size.height * 0.75,
+      ),
+      backgroundColor: Colors.white.withValues(alpha: 24 / 255),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withValues(alpha: 66 / 255)),
+      ),
+      content: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 56 / 255),
+              shape: BoxShape.circle,
+              border: Border.all(color: accent),
+            ),
+            child: Icon(icon, color: Color(0xFF0D1B2A), size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+      duration: const Duration(seconds: 2),
+    ),
+  );
 }

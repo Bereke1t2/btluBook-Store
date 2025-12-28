@@ -11,7 +11,7 @@ class UserModel extends User {
     required super.updatedAt,
     super.booksReadCount = 0,
     super.readingStreak = 0,
-    super.lastReadDate,
+    super.lastReadDate,  
     super.points = 0,
   });
 
@@ -46,7 +46,7 @@ class UserModel extends User {
       updatedAt: updatedAt,
       booksReadCount: (json['books_read_count'] as int?) ?? 0,
       readingStreak: (json['reading_streak'] as int?) ?? 0,
-      lastReadDate: _tryParseDate(json['last_read_date']),
+      lastReadDate: _tryParseDate(json['last_read_date'] ?? ''),
       points: (json['points'] as int?) ?? 0,
     );
   }

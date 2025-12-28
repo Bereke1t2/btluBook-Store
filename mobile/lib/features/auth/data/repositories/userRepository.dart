@@ -52,7 +52,7 @@ class UserRepositoryImpl implements UserRepository {
   Future<Either<Failure, void>> logout() async {
     if (await networkInfo.isConnected) {
       try {
-        await remoteDataSource.logout();
+        // await remoteDataSource.logout();
         localDataSource.clearCache();
         return const Right(null);
       } catch (e) {

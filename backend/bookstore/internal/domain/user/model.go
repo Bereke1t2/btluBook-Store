@@ -153,11 +153,11 @@ func (u User) MarshalJSON() ([]byte, error) {
 		ID             int        `json:"id"`
 		Username       string     `json:"username"`
 		Email          string     `json:"email"`
-		PasswordHash   string     `json:"password_hash"`
+		PasswordHash   string     `json:"passwordHash"`
 		ProfileImage   *string    `json:"profile_image,omitempty"`
 		CreatedAt      string     `json:"created_at"`
 		UpdatedAt      string     `json:"updated_at"`
-		BooksReadCount int        `json:"booksRead_count"`
+		BooksReadCount int        `json:"books_read_count"`
 		ReadingStreak  int        `json:"reading_streak"`
 		LastReadDate   *string    `json:"last_read_date,omitempty"`
 		Points         int        `json:"points"`
