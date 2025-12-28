@@ -570,40 +570,48 @@ class _HomePageState extends State<HomePage>
               icon: Icons.home_rounded,
               label: 'Home',
               selected: _navIndex == 0,
-              onTap: () => setState(() {
-                _navIndex = 0;
-                Navigator.pushNamed(context, '/home');
-              }),
+              onTap: () {
+                // Already on home; keep indicator on Home.
+                if (_navIndex != 0) {
+                  setState(() => _navIndex = 0);
+                }
+              },
             ),
             _NavItem(
               icon: Icons.chat_bubble_outline_rounded,
               label: 'Chat',
               selected: _navIndex == 1,
-              onTap: () => setState(() {
-                _navIndex = 1;
-                Navigator.pushNamed(context, '/ChatPage');
-              }),
+              onTap: () async {
+                setState(() => _navIndex = 1);
+                await Navigator.pushNamed(context, '/ChatPage');
+                if (!mounted) return;
+                setState(() => _navIndex = 0);
+              },
             ),
             _NavItem(
               icon: Icons.cloud_upload_outlined,
               label: 'Upload',
               selected: _navIndex == 2,
-              onTap: () => setState(() {
-                _navIndex = 2;
-                Navigator.pushNamed(context, '/UploadPage');
-              }),
+              onTap: () async {
+                setState(() => _navIndex = 2);
+                await Navigator.pushNamed(context, '/UploadPage');
+                if (!mounted) return;
+                setState(() => _navIndex = 0);
+              },
             ),
             _NavItem(
               icon: Icons.person_rounded,
               label: 'Profile',
               selected: _navIndex == 3,
-              onTap: () => setState(() {
-                _navIndex = 3;
-                Navigator.push(
+              onTap: () async {
+                setState(() => _navIndex = 3);
+                await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => UserProfilePage(user: widget.user)),
                 );
-              }),
+                if (!mounted) return;
+                setState(() => _navIndex = 0);
+              },
             ),
           ],
         ),

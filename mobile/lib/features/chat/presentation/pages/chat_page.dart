@@ -550,51 +550,58 @@ class _ChatPageState extends State<ChatPage> with SingleTickerProviderStateMixin
                   ),
                 ),
               ),
-              bottomNavigationBar: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                bottomNavigationBar: AnimatedPadding(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(
+                  left: 8,
+                  right: 8,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+                ),
+                child: SafeArea(
+                  top: false,
                   child: GlassContainer(
-                    borderRadius: 18,
-                    blurSigma: 20,
-                    color: Colors.white.withValues(alpha: 26 / 255),
-                    borderColor: Colors.white.withValues(alpha: 64 / 255),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            minLines: 1,
-                            maxLines: 4,
-                            style: const TextStyle(color: Colors.white),
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (_) => _sendMessage(),
-                            decoration: _glassInputDecoration(
-                              hint: 'Ask about ${widget.bookTitle}...',
-                              icon: Icons.chat_bubble_outline_rounded,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          height: 44,
-                          width: 48,
-                          child: IconButton.filled(
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(accentGold),
-                              foregroundColor: WidgetStateProperty.all(Colors.black),
-                              shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                            ),
-                            onPressed: _sending ? null : _sendMessage,
-                            icon: const Icon(Icons.send_rounded),
-                          ),
-                        ),
-                      ],
+                  borderRadius: 18,
+                  blurSigma: 20,
+                  color: Colors.white.withValues(alpha: 26 / 255),
+                  borderColor: Colors.white.withValues(alpha: 64 / 255),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    children: [
+                    Expanded(
+                      child: TextField(
+                      controller: _controller,
+                      minLines: 1,
+                      maxLines: 4,
+                      style: const TextStyle(color: Colors.white),
+                      textInputAction: TextInputAction.send,
+                      onTap: _scrollToBottom,
+                      onSubmitted: (_) => _sendMessage(),
+                      decoration: _glassInputDecoration(
+                        hint: 'Ask about ${widget.bookTitle}...',
+                        icon: Icons.chat_bubble_outline_rounded,
+                      ),
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 44,
+                      width: 48,
+                      child: IconButton.filled(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.all(accentGold),
+                        foregroundColor: WidgetStateProperty.all(Colors.black),
+                        shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      ),
+                      onPressed: _sending ? null : _sendMessage,
+                      icon: const Icon(Icons.send_rounded),
+                      ),
+                    ),
+                    ],
+                  ),
                   ),
                 ),
-              ),
+                ),
               floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
               floatingActionButton: widget.isStudentBook
                   ? Padding(
