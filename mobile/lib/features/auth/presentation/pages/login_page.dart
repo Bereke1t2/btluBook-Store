@@ -107,55 +107,54 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
             Navigator.of(context).pushReplacementNamed('/login');
           }
         },
-        child: ScrollConfiguration(
-          behavior: ScrollBehavior(),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: begin,
-                end: end,
-                colors: UiConst.colors,
-                stops: const [0.0, 0.5, 1.0],
-              ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: begin,
+              end: end,
+              colors: UiConst.colors,
+              stops: const [0.0, 0.5, 1.0],
             ),
-            child: Stack(
-              children: [
-                Positioned(
-                  left: -60,
-                  top: -40,
-                  child: GlowCircle(size: 260, color:UiConst.amber), // amber
-                ),
-                const Positioned(
-                  right: -80,
-                  bottom: -60,
-                  child: GlowCircle(size: 320, color: Color(0xFFA1E3B5)), // sage
-                ),
-                const Positioned(
-                  right: -20,
-                  top: 80,
-                  child: GlowCircle(size: 180, color: Color(0xFFD9CBAA)), // parchment
-                ),
-                Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                      child: Container(
-                        constraints: const BoxConstraints(maxWidth: 420),
-                        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 26),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.22)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.18),
-                              blurRadius: 30,
-                              spreadRadius: 4,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                left: -60,
+                top: -40,
+                child: GlowCircle(size: 260, color:UiConst.amber), // amber
+              ),
+              const Positioned(
+                right: -80,
+                bottom: -60,
+                child: GlowCircle(size: 320, color: Color(0xFFA1E3B5)), // sage
+              ),
+              const Positioned(
+                right: -20,
+                top: 80,
+                child: GlowCircle(size: 180, color: Color(0xFFD9CBAA)), // parchment
+              ),
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 26),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withOpacity(0.22)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.18),
+                            blurRadius: 30,
+                            spreadRadius: 4,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: SingleChildScrollView(
                         child: Form(
                           key: _formKey,
                           child: Column(
@@ -297,8 +296,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );

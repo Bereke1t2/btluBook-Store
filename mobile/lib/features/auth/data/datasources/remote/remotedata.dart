@@ -129,7 +129,7 @@ Future<UserModel> login(String email, String password) async {
     if (response.statusCode == 200) {
       final data = json.decode(response.body)['data'];
       final updatedUser = UserModel.fromJson(data);
-      localDataSource.cacheUser(updatedUser, localDataSource.getToken()! as String);
+      localDataSource.cacheUser(updatedUser, localDataSource.getToken() as String);
       return updatedUser;
     } else {
       throw Exception("Failed to update profile with response code: ${response.statusCode}");

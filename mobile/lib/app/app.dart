@@ -24,6 +24,8 @@ class App extends StatelessWidget {
           final authState = context.read<AuthBloc>().state;
           if (authState is LoginSuccess) {
             return HomePage(user: authState.user);
+          } else if (authState is Authenticated) {
+            return HomePage(user: authState.user);
           }
           print('User not authenticated, redirecting to login page. state: $authState');
           return const LoginPage();

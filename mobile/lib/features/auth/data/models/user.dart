@@ -16,19 +16,38 @@ class UserModel extends User {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    print(json);
+    final dynamic rawId = json['id'];
+    final int id = () {
+      if (rawId == null) return 0;
+      if (rawId is int) return rawId;
+      if (rawId is String && rawId.isNotEmpty) {
+        return int.tryParse(rawId) ?? 0;
+      }
+      return 0;
+    }();
+
+    final String username = (json['username'] as String?)?.trim() ?? '';
+    final String email = (json['email'] as String?)?.trim() ?? '';
+    final String passwordHash = (json['passwordHash'] as String?)?.trim() ?? '';
+
+    final DateTime createdAt =
+        json['created_at'] != null ? _parseDate(json['created_at']) : DateTime.now();
+    final DateTime updatedAt =
+        json['updated_at'] != null ? _parseDate(json['updated_at']) : DateTime.now();
+
     return UserModel(
-      id: json['id'] is String ? int.parse(json['id']) : json['id'] as int,
-      username: json['username'] ?? '',
-      email: json['email'],
-      passwordHash:  'no',
-      profileImage: json['profile_image']  ?? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTISkOqZqbBuD0yPxtE7VU7DI36fTG0IuwpoQ&s",
-      createdAt: _parseDate(json['created_at']),
-      updatedAt: _parseDate(json['updated_at']),
-      booksReadCount: json['books_read_count'] ?? 0,
-      readingStreak: json['reading_streak'] ?? 0,
+      id: id,
+      username: username,
+      email: email,
+      passwordHash: passwordHash,
+      profileImage: (json['profile_image'] as String?) ??
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTISkOqZqbBuD0yPxtE7VU7DI36fTG0IuwpoQ&s",
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      booksReadCount: (json['books_read_count'] as int?) ?? 0,
+      readingStreak: (json['reading_streak'] as int?) ?? 0,
       lastReadDate: _tryParseDate(json['last_read_date']),
-      points: json['points'] ?? 0,
+      points: (json['points'] as int?) ?? 0,
     );
   }
 

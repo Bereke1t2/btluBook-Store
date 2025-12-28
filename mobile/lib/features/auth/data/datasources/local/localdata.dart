@@ -28,6 +28,7 @@ class LocaldataImpl implements LocalData {
         return UserModel.fromJson(json.decode(userJson));
       } catch (e) {
         // Handle error
+        return throw Exception('Failed to parse cached user: $e');
       }
     }
     return null;

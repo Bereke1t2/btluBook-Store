@@ -21,7 +21,6 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<Either<Failure, UserModel>> login(String email, String password) async {
-    print('UserRepositoryImpl: login called with email: $email');
     if (await networkInfo.isConnected) {
       try {
         final user = await remoteDataSource.login(email, password);

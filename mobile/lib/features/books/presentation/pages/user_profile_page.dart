@@ -826,7 +826,7 @@ class _UserProfilePageState extends State<UserProfilePage>
       height: 44,
       child: isFailure
           ? Text(
-              'Failed to update profile ${state is UpdateProfileFailure ? (state as UpdateProfileFailure).message : ''}',
+              'Failed to update profile ${state is UpdateProfileFailure ? (state).message : ''}',
               style: const TextStyle(color: Colors.red),
             )
           : ElevatedButton.icon(
