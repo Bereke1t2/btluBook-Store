@@ -1426,7 +1426,6 @@ class _GlassExpansionTileState extends State<_GlassExpansionTile> {
     );
   }
 }
-
 void showFancySnackBar({
   required BuildContext context,
   required MediaQueryData media,
@@ -1441,13 +1440,13 @@ void showFancySnackBar({
       margin: EdgeInsets.only(
         left: 16,
         right: 16,
-        // push it near the top area
         bottom: media.size.height * 0.75,
       ),
-      backgroundColor: Colors.white.withValues(alpha: 24 / 255),
+      // Darker, less transparent background for better text contrast
+      backgroundColor: Colors.black.withOpacity(0.75),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.white.withValues(alpha: 66 / 255)),
+        side: BorderSide(color: Colors.white.withValues(alpha: 56 / 255)),
       ),
       content: Row(
         children: [
@@ -1459,7 +1458,7 @@ void showFancySnackBar({
               shape: BoxShape.circle,
               border: Border.all(color: accent),
             ),
-            child: Icon(icon, color: Color(0xFF0D1B2A), size: 18),
+            child: Icon(icon, color: Colors.white, size: 18),
           ),
           const SizedBox(width: 10),
           Expanded(
