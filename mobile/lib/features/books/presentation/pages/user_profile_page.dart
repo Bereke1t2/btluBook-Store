@@ -874,39 +874,30 @@ class _UserProfilePageState extends State<UserProfilePage>
     required AuthState state,
   }) {
     final isLoading = state is UpdateProfileLoading || state is LogoutLoading;
-    final isFailure = state is UpdateProfileFailure || state is LogoutFailure;
 
     return SizedBox(
       height: 44,
-      child: isFailure
-          ? Text(
-              'Failed to update profile ${state is UpdateProfileFailure ? (state).message : ''}',
-              style: const TextStyle(color: Colors.red),
-            )
-          : ElevatedButton.icon(
-              onPressed: isLoading ? null : onTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _gold,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+      child: ElevatedButton.icon(
+        onPressed: isLoading ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _gold,
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        icon: isLoading ? null : Icon(icon),
+        label: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.black,
+                  strokeWidth: 2.5,
                 ),
-              ),
-              icon: isLoading ? null : Icon(icon),
-              label: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.black,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : Text(
-                      label,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-            ),
+              )
+            : Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+      ),
     );
   }
 
