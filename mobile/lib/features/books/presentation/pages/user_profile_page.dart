@@ -2,8 +2,10 @@ import 'dart:ui' as ui;
 import 'package:ethio_book_store/features/auth/domain/entities/user.dart';
 import 'package:ethio_book_store/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:ethio_book_store/features/books/presentation/bloc/book_bloc.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 
 class UserProfilePage extends StatefulWidget {
   final User user;
@@ -1024,6 +1026,36 @@ class _UserProfilePageState extends State<UserProfilePage>
   void _changePhotoSheet() {
     final urlCtrl = TextEditingController();
 
+    Future<void> _pickFromGallery() async {
+      try {
+        final picker = ImagePicker();
+        final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+        if (picked != null) {
+          setState(() => _profileImage = picked.path); // local file path
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        _toast('Failed to pick image.');
+      }
+    }
+
+    Future<void> _pickFromFiles() async {
+      try {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: false,
+          withData: false,
+        );
+        final file = result?.files.single;
+        if (file != null && file.path != null) {
+          setState(() => _profileImage = file.path!); // local file path
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        _toast('Failed to pick file.');
+      }
+    }
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -1087,24 +1119,45 @@ class _UserProfilePageState extends State<UserProfilePage>
                               _toast('Enter a valid image URL.');
                               return;
                             }
+                            // Optimistically update UI; persist later
+                            setState(() => _profileImage = url);
+                            Navigator.pop(context);
+
+                            // TODO: send URL to backend to update users.profile_image
                             context.read<AuthBloc>().add(
                               UpdateProfileRequested(
                                 user: User(
                                   id: widget.user.id,
                                   username: _usernameCtrl.text.trim(),
                                   email: _emailCtrl.text.trim(),
-                                  profileImage: _profileImage,
+                                  profileImage: url,
                                   passwordHash: widget.user.passwordHash,
                                   createdAt: widget.user.createdAt,
                                   updatedAt: DateTime.now(),
                                 ),
                               ),
                             );
-                            setState(() => _profileImage = url);
-                            Navigator.pop(context);
                           },
                         );
                       },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _secondaryButton(
+                        label: 'Pick from gallery',
+                        onTap: _pickFromGallery,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _secondaryButton(
+                        label: 'Pick from files',
+                        onTap: _pickFromFiles,
+                      ),
                     ),
                   ],
                 ),
@@ -1115,10 +1168,8 @@ class _UserProfilePageState extends State<UserProfilePage>
                     label: 'Remove photo',
                     onTap: () async {
                       await _withProgress(() async {
-                        // TODO: call backend set users.profile_image = NULL
-                        await Future<void>.delayed(
-                          const Duration(milliseconds: 400),
-                        );
+                        // TODO: call backend to set users.profile_image = NULL
+                        await Future<void>.delayed(const Duration(milliseconds: 400));
                       });
                       setState(() => _profileImage = null);
                       Navigator.pop(context);

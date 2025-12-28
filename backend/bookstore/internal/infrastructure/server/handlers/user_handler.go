@@ -112,9 +112,6 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 	
-	// Create a temporary user struct with the ID to pass to the usecase
-	// (Assuming your usecase expects a User struct to extract the ID)
-	
 	userToDelete := bookUser.User{ID: parsedID}
 
 	_, err = h.deleteUserUseCase.Execute(userToDelete)
@@ -200,8 +197,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		if *input.ProfileImage == "" {
 			updated.ProfileImage = nil
 		} else {
-			pi := *input.ProfileImage
-			updated.ProfileImage = &pi
+			updated.ProfileImage = input.ProfileImage
 		}
 	}
 	if input.BooksReadCount != nil {
