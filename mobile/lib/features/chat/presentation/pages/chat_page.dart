@@ -164,6 +164,7 @@ class _ChatPageState extends State<ChatPage> with SingleTickerProviderStateMixin
     // Ask backend through BLoC
     _bloc.add(GetChatResponseEvent(text , widget.bookTitle));
   }
+  // new year
 
   Future<void> _chooseQuizTypeAndStart() async {
     final type = await showModalBottomSheet<QuizType>(
