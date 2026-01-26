@@ -681,6 +681,7 @@ class GlassContainer extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
   final double borderRadius;
   final Color color;
+  final Color borderColor;
 
   const GlassContainer({
     super.key,
@@ -688,7 +689,8 @@ class GlassContainer extends StatelessWidget {
     this.padding,
     this.margin,
     this.borderRadius = 20,
-    this.color = const Color(0x1AFFFFFF), // ~10% opacity white
+    this.color = const Color(0x1AFFFFFF),
+    this.borderColor = const Color(0x33FFFFFF), // default ~20% white
   });
 
   @override
@@ -704,7 +706,7 @@ class GlassContainer extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(borderRadius),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              border: Border.all(color: borderColor),
             ),
             child: child,
           ),
@@ -748,7 +750,7 @@ class GlassTextField extends StatelessWidget {
         hintStyle: const TextStyle(color: Colors.white38),
         prefixIcon: Icon(icon, color: Colors.white70, size: 20),
         filled: true,
-        fillColor: Colors.black.withValues(alpha: 0.2),
+        fillColor: Colors.black.withOpacity(0.2),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 14,
           horizontal: 16,
@@ -785,7 +787,7 @@ class GlassDropdown<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.2),
+        color: Colors.black.withOpacity(0.2),
         borderRadius: BorderRadius.circular(14),
       ),
       child: DropdownButtonHideUnderline(
@@ -860,7 +862,7 @@ class GlassButton extends StatelessWidget {
     return Material(
       color: isPrimary
           ? const Color(0xFFF2C94C)
-          : Colors.white.withValues(alpha: 0.1),
+          : Colors.white.withOpacity(0.1),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -897,6 +899,8 @@ class GlassButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
   }
 }
 
@@ -992,8 +996,6 @@ class AnimatedBackground extends StatelessWidget {
       },
     );
   }
-}
-
 class _GlowCircle extends StatelessWidget {
   final Color color;
   final double size;
@@ -1008,13 +1010,15 @@ class _GlowCircle extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.4),
+            color: color.withOpacity(0.4),
             blurRadius: 100,
             spreadRadius: 20,
           ),
         ],
       ),
     );
+  }
+}
   }
 }
 

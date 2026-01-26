@@ -572,6 +572,52 @@ class _ChatPageState extends State<ChatPage> with SingleTickerProviderStateMixin
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Row(
                     children: [
+                    // Speech-to-text button
+                    _SpeechToTextButton(
+                      onTap: _sending ? null : () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: accentGold.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.mic, color: Colors.white, size: 18),
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Voice Input',
+                                        style: TextStyle(fontWeight: FontWeight.w700),
+                                      ),
+                                      Text(
+                                        'Speech-to-text coming soon!',
+                                        style: TextStyle(fontSize: 12, color: Colors.white70),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: slate,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
                       controller: _controller,
@@ -681,6 +727,114 @@ class _TypingBubbleState extends State<_TypingBubble> with SingleTickerProviderS
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/// Speech-to-text button with pulsing animation
+class _SpeechToTextButton extends StatefulWidget {
+  final VoidCallback? onTap;
+
+  const _SpeechToTextButton({this.onTap});
+
+  @override
+  State<_SpeechToTextButton> createState() => _SpeechToTextButtonState();
+}
+
+class _SpeechToTextButtonState extends State<_SpeechToTextButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _scale = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: widget.onTap != null ? (_) => setState(() => _isPressed = true) : null,
+      onTapUp: widget.onTap != null ? (_) {
+        setState(() => _isPressed = false);
+        widget.onTap?.call();
+      } : null,
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            width: 44,
+            height: 44,
+            transform: Matrix4.identity()..scale(_isPressed ? 0.9 : 1.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.08),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.25),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: accentGold.withOpacity(0.12 * _scale.value),
+                  blurRadius: 8 * _scale.value,
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Pulsing ring
+                AnimatedBuilder(
+                  animation: _scale,
+                  builder: (context, child) {
+                    return Container(
+                      width: 32 * _scale.value,
+                      height: 32 * _scale.value,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: accentGold.withOpacity(0.3 * (2 - _scale.value)),
+                          width: 1,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                // Mic icon
+                Icon(
+                  Icons.mic_rounded,
+                  color: widget.onTap != null ? accentGold : Colors.white38,
+                  size: 22,
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

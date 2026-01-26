@@ -1,14 +1,17 @@
 import 'package:ethio_book_store/features/auth/domain/entities/user.dart';
 import 'package:ethio_book_store/features/books/domain/entities/book.dart';
 import 'package:ethio_book_store/features/books/presentation/bloc/book_bloc.dart';
+import 'package:ethio_book_store/features/books/presentation/pages/book_details_page.dart';
 import 'package:ethio_book_store/features/books/presentation/pages/user_profile_page.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/Book.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/GlassBtnIcon.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/Tag.dart';
+import 'package:ethio_book_store/features/books/presentation/widgets/bottomNav.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/category.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/coverImage.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/header.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/rating.dart';
+import 'package:ethio_book_store/features/books/presentation/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -200,11 +203,16 @@ class _HomePageState extends State<HomePage>
                               if (state is BooksLoaded) {
                                 _allBooks = state.books;
                               } else if (state is BookLoadingInProgress) {
-                                return const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 32),
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      color: Color(0xFFF2C94C),
+                                // Show skeleton loading for featured section
+                                return SizedBox(
+                                  height: height * 0.26,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    itemCount: 2,
+                                    itemBuilder: (_, __) => const Padding(
+                                      padding: EdgeInsets.only(right: 12),
+                                      child: FeaturedCardSkeleton(),
                                     ),
                                   ),
                                 );
@@ -239,10 +247,17 @@ class _HomePageState extends State<HomePage>
                               if (state is BooksLoaded) {
                                 _allBooks = state.books;
                               }else if (state is BookLoadingInProgress) {
-                                return const SliverToBoxAdapter(
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 32),
-                                    child: null
+                                // Show skeleton grid while loading
+                                return SliverGrid(
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, index) => const BookCardSkeleton(),
+                                    childCount: 6,
+                                  ),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 12,
+                                    crossAxisSpacing: 12,
+                                    mainAxisExtent: 280,
                                   ),
                                 );
                               } else if (state is BookOperationFailure) {
@@ -275,7 +290,16 @@ class _HomePageState extends State<HomePage>
           );
         },
       ),
-      bottomNavigationBar: SafeArea(child: _buildBottomNav()),
+      bottomNavigationBar: SafeArea(child: BuildBottomNav(
+        context: context,
+        navIndex: _navIndex,
+        onSelect: (index) {
+          setState(() {
+            _navIndex = index;
+          });
+        },
+        user: widget.user,
+      )),
     );
   }
 
@@ -554,90 +578,15 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Widget _buildBottomNav() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: GlassContainer(
-        borderRadius: 18,
-        blurSigma: 20,
-        color: Colors.white.withValues(alpha: 26 / 255),
-        borderColor: Colors.white.withValues(alpha: 56 / 255),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _NavItem(
-              icon: Icons.home_rounded,
-              label: 'Home',
-              selected: _navIndex == 0,
-              onTap: () {
-                // Already on home; keep indicator on Home.
-                if (_navIndex != 0) {
-                  setState(() => _navIndex = 0);
-                }
-              },
-            ),
-            _NavItem(
-              icon: Icons.chat_bubble_outline_rounded,
-              label: 'Chat',
-              selected: _navIndex == 1,
-              onTap: () async {
-                setState(() => _navIndex = 1);
-                await Navigator.pushNamed(context, '/ChatPage');
-                if (!mounted) return;
-                setState(() => _navIndex = 0);
-              },
-            ),
-            _NavItem(
-              icon: Icons.cloud_upload_outlined,
-              label: 'Upload',
-              selected: _navIndex == 2,
-              onTap: () async {
-                setState(() => _navIndex = 2);
-                await Navigator.pushNamed(context, '/UploadPage');
-                if (!mounted) return;
-                setState(() => _navIndex = 0);
-              },
-            ),
-            _NavItem(
-              icon: Icons.person_rounded,
-              label: 'Profile',
-              selected: _navIndex == 3,
-              onTap: () async {
-                setState(() => _navIndex = 3);
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => UserProfilePage(user: widget.user)),
-                );
-                if (!mounted) return;
-                setState(() => _navIndex = 0);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _openQuickLook(Book book) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => QuickLookSheet(
-        book: book,
-        onAddToCart: () {
-            Navigator.of(context).pushReplacementNamed(
-            "/ChatPage",
-            arguments: {"bookTitle": book.title},
-            );
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('now you can chat about "${book.title}"'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        },
+    // Navigate to book details page with hero animation
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookDetailsPage(
+          book: book,
+          heroTag: 'book-${book.id}',
+        ),
       ),
     );
   }
@@ -749,44 +698,3 @@ class _HomePageState extends State<HomePage>
 }
 
 // Network cover with graceful placeholder, loading, and error handling
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? const Color(0xFFF2C94C) : Colors.white70;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
