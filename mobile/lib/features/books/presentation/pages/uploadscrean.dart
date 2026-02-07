@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:ethio_book_store/features/books/domain/entities/book.dart';
 import 'package:ethio_book_store/features/books/presentation/bloc/book_bloc.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:ethio_book_store/core/const/url_const.dart';
 
 // -----------------------------------------------------------------------------
 // 1. MAIN PAGE
@@ -595,12 +597,21 @@ class CoverPreviewCard extends StatelessWidget {
               color: Colors.black26,
               child: coverUrl == null
                   ? const Icon(Icons.image_not_supported, color: Colors.white24)
-                  : Image.network(
-                      coverUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.broken_image, color: Colors.white24),
-                    ),
+                  : (coverUrl!.startsWith('http') || coverUrl!.startsWith('/uploads'))
+                      ? Image.network(
+                          coverUrl!.startsWith('http') 
+                              ? coverUrl! 
+                              : "${UrlConst.baseUrl}${coverUrl!.startsWith('/') ? '' : '/'}$coverUrl",
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.broken_image, color: Colors.white24),
+                        )
+                      : Image.file(
+                          File(coverUrl!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.broken_image, color: Colors.white24),
+                        ),
             ),
           ),
           const SizedBox(width: 14),
@@ -901,8 +912,6 @@ class GlassButton extends StatelessWidget {
     );
   }
 }
-  }
-}
 
 class _IconButton extends StatelessWidget {
   final IconData icon;
@@ -996,6 +1005,8 @@ class AnimatedBackground extends StatelessWidget {
       },
     );
   }
+}
+
 class _GlowCircle extends StatelessWidget {
   final Color color;
   final double size;
@@ -1017,8 +1028,6 @@ class _GlowCircle extends StatelessWidget {
         ],
       ),
     );
-  }
-}
   }
 }
 

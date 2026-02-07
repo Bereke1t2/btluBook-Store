@@ -26,9 +26,16 @@ class Book extends Equatable {
     this.isFeatured = false,
     this.tag,
     this.sharedBy = 'Admin',
+    this.lastReadPage = 0,
+    this.totalPages = 0,
   });
+
+  final int lastReadPage;
+  final int totalPages;
+
+  double get readProgress => totalPages > 0 ? lastReadPage / totalPages : 0.0;
 
 
   @override
-  List<Object?> get props => [id, title, author, rating, price, category, isFeatured, tag, coverUrl, sharedBy, bookUrl];
+  List<Object?> get props => [id, title, author, rating, price, category, isFeatured, tag, coverUrl, sharedBy, bookUrl, lastReadPage, totalPages];
 }

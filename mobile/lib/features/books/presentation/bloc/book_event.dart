@@ -20,3 +20,22 @@ class SearchBooksEvent extends BookEvent {
 
   SearchBooksEvent(this.query);
 }
+
+class DownloadBookEvent extends BookEvent {
+  final String bookId;
+  DownloadBookEvent(this.bookId);
+}
+
+class LoadDownloadedBooksEvent extends BookEvent {}
+
+class UpdateReadingProgressEvent extends BookEvent {
+  final String bookId;
+  final int page;
+  final int totalPages;
+
+  UpdateReadingProgressEvent({
+    required this.bookId,
+    required this.page,
+    required this.totalPages,
+  });
+}

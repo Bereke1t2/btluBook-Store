@@ -13,6 +13,8 @@ class Books extends Table {
   TextColumn get coverUrl => text()();     // cover image file path
   TextColumn get sharedBy => text()();     // user who shared the book
   TextColumn get bookUrl => text()();      // pdf/epub file path
+  IntColumn get lastReadPage => integer().withDefault(const Constant(0))();
+  IntColumn get totalPages => integer().withDefault(const Constant(0))();
 
   // Nullable fields
   TextColumn get tag => text().nullable()();

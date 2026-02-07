@@ -13,6 +13,8 @@ class BookModel extends Book {
     required super.coverUrl,
     required super.sharedBy,
     required super.bookUrl,
+    super.lastReadPage,
+    super.totalPages,
   });
 
   static double _toDouble(dynamic value, {double defaultValue = 0.0}) {
@@ -51,6 +53,8 @@ class BookModel extends Book {
       coverUrl: (json['cover_url'] ?? '').toString(),
       sharedBy: (json['shared_by'] ?? '').toString(),
       bookUrl: (json['book_url'] ?? '').toString(),
+      lastReadPage: json['last_read_page'] ?? 0,
+      totalPages: json['total_pages'] ?? 0,
     );
   }
 
@@ -67,6 +71,8 @@ class BookModel extends Book {
       'cover_url': coverUrl,
       'shared_by': sharedBy,
       'book_url': bookUrl,
+      'last_read_page': lastReadPage,
+      'total_pages': totalPages,
     };
   }
 
@@ -83,6 +89,8 @@ class BookModel extends Book {
       coverUrl: book.coverUrl,
       sharedBy: book.sharedBy,
       bookUrl: book.bookUrl,
+      lastReadPage: book.lastReadPage,
+      totalPages: book.totalPages,
     );
   }
 }
