@@ -25,3 +25,10 @@ class GetShortAnswerQuestionEvent extends ChatEvent{
 
   GetShortAnswerQuestionEvent(this.bookName);
 }
+
+class GetChatResponseStreamEvent extends ChatEvent {
+  final String prompt;
+  final String bookName;
+
+  GetChatResponseStreamEvent(this.prompt, this.bookName);
+}

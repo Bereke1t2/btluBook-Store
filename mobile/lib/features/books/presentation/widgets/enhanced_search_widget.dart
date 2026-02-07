@@ -1,5 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/const/ui_const.dart';
@@ -38,6 +40,11 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget>
   bool _showOverlay = false;
   List<String> _recentSearches = [];
   
+  // Voice Search
+  final SpeechToText _speechToText = SpeechToText();
+  bool _speechEnabled = false;
+  bool _isListening = false;
+
   // Default suggestions if none provided
   final List<String> _defaultSuggestions = [
     'Fiction',
@@ -66,6 +73,12 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget>
 
     _focusNode.addListener(_onFocusChanged);
     _loadRecentSearches();
+    _initSpeech();
+  }
+
+  void _initSpeech() async {
+    _speechEnabled = await _speechToText.initialize();
+    setState(() {});
   }
 
   void _onFocusChanged() {
@@ -113,26 +126,41 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget>
     _focusNode.unfocus();
   }
 
-  void _onVoiceSearch() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.mic, color: Colors.white),
-            const SizedBox(width: 12),
-            Text(
-              'Voice search coming soon!',
-              style: AppTypography.bodyMedium,
-            ),
-          ],
-        ),
-        backgroundColor: UiConst.slate,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(UiConst.radiusMedium),
-        ),
-      ),
-    );
+  Future<void> _onVoiceSearch() async {
+    if (!_speechEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Speech not available')),
+      );
+      return;
+    }
+
+    // Check permission
+    var status = await Permission.microphone.status;
+    if (!status.isGranted) {
+      status = await Permission.microphone.request();
+      if (!status.isGranted) return;
+    }
+
+    if (_speechToText.isListening) {
+      await _speechToText.stop();
+      setState(() => _isListening = false);
+    } else {
+      setState(() => _isListening = true);
+      await _speechToText.listen(
+        onResult: (result) {
+          setState(() {
+             widget.controller.text = result.recognizedWords;
+             // Ensure cursor is at end
+             widget.controller.selection = TextSelection.fromPosition(TextPosition(offset: widget.controller.text.length));
+          });
+          if (result.finalResult) {
+            setState(() => _isListening = false);
+            widget.onSearch(result.recognizedWords);
+            _onSearchSubmit(result.recognizedWords);
+          }
+        },
+      );
+    }
   }
 
   @override

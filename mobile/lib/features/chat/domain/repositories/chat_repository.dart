@@ -9,4 +9,5 @@ abstract class ChatRepository {
   Future<Either<Failure , List<TrueFalse>>> getTrueFalseQuestion(String BookName );
   Future<Either<Failure , List<ShortAnswer>>> getShortAnswerQuestion(String BookName );
   Future<Either<Failure , String>> getChatResponse(String prompt , String BookName );
+  Stream<Either<Failure, String>> streamChatResponse(String prompt, String bookName);
 }

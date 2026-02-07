@@ -6,6 +6,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:ethio_book_store/app/themes/app_theme.dart';
+import 'package:ethio_book_store/core/const/url_const.dart';
 
 class UserProfilePage extends StatefulWidget {
   final User user;
@@ -43,7 +45,6 @@ class _UserProfilePageState extends State<UserProfilePage>
   final _confirmPassCtrl = TextEditingController();
 
   // Preferences (local UI only)
-  ThemeMode _themeMode = ThemeMode.system;
   bool _pushNoti = true;
   bool _emailNoti = true;
 
@@ -453,48 +454,41 @@ class _UserProfilePageState extends State<UserProfilePage>
                                       color: Colors.white24,
                                       height: 24,
                                     ),
-                                    Row(
-                                      children: [
-                                        _leadingIcon(
-                                          Icons.brightness_6_rounded,
-                                        ),
-                                        const SizedBox(width: 10),
-                                        const Expanded(
-                                          child: Text(
-                                            'Theme',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w700,
+                                    BlocBuilder<ThemeBloc, AppThemeMode>(
+                                      builder: (context, themeMode) {
+                                        return Row(
+                                          children: [
+                                            _leadingIcon(
+                                              Icons.brightness_6_rounded,
                                             ),
-                                          ),
-                                        ),
-                                        _themePill(
-                                          label: 'System',
-                                          selected:
-                                              _themeMode == ThemeMode.system,
-                                          onTap: () => setState(
-                                            () => _themeMode = ThemeMode.system,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        _themePill(
-                                          label: 'Light',
-                                          selected:
-                                              _themeMode == ThemeMode.light,
-                                          onTap: () => setState(
-                                            () => _themeMode = ThemeMode.light,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        _themePill(
-                                          label: 'Dark',
-                                          selected:
-                                              _themeMode == ThemeMode.dark,
-                                          onTap: () => setState(
-                                            () => _themeMode = ThemeMode.dark,
-                                          ),
-                                        ),
-                                      ],
+                                            const SizedBox(width: 10),
+                                            const Expanded(
+                                              child: Text(
+                                                'Theme',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ),
+                                            _themePill(
+                                              label: 'Light',
+                                              selected: themeMode == AppThemeMode.light,
+                                              onTap: () {
+                                                context.read<ThemeBloc>().add(SetTheme(AppThemeMode.light));
+                                              },
+                                            ),
+                                            const SizedBox(width: 6),
+                                            _themePill(
+                                              label: 'Dark',
+                                              selected: themeMode == AppThemeMode.dark,
+                                              onTap: () {
+                                                context.read<ThemeBloc>().add(SetTheme(AppThemeMode.dark));
+                                              },
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -661,7 +655,9 @@ class _UserProfilePageState extends State<UserProfilePage>
                           ),
                         )
                       : Image.network(
-                          _profileImage!,
+                          _profileImage!.startsWith('http') 
+                              ? _profileImage! 
+                              : "${UrlConst.baseUrl}${_profileImage!.startsWith('/') ? '' : '/'}${_profileImage!}",
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Center(
                             child: Text(

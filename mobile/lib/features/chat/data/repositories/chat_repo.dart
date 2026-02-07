@@ -19,6 +19,21 @@ class ChatRepositoryImpl implements ChatRepository {
     required this.networkInfo,
   });
   @override
+  Stream<Either<Failure, String>> streamChatResponse(String prompt, String bookName) async* {
+    if (await networkInfo.isConnected) {
+      try {
+        await for (final chunk in remoteDataSource.streamChatResponse(prompt, bookName)) {
+           yield Right(chunk);
+        }
+      } catch (e) {
+        yield Left(Failure(e.toString()));
+      }
+    } else {
+      yield Left(Failure('No Internet Connection'));
+    }
+  }
+
+  @override
   Future<Either<Failure, String>> getChatResponse(String prompt , String bookName) async {
     if (await networkInfo.isConnected) {
       try {

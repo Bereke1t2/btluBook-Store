@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 
 abstract class ChatRemoteDataSource {
   Future<String> getChatResponse(String prompt , String bookName);
+  Stream<String> streamChatResponse(String prompt, String bookName);
   Future<List<TrueFalse>> getTrueFalseQuestion(String bookName);
   Future<List<MultipleQuestions>> getMultipleQuestions(String bookName);
   Future<List<ShortAnswer>> getShortAnswerQuestion(String bookName);
@@ -43,7 +44,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       print('Chat response status code: ${response.statusCode}');
       print('Chat response body: ${response.body}');
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      final data = jsonDecode(response.body);
         return data['message'];
       } else {
         throw Exception('Failed to get chat response');
@@ -51,6 +52,39 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     } catch (e) {
       print('Error getting chat response: $e');
       rethrow;
+    }
+  }
+
+  @override
+  Stream<String> streamChatResponse(String prompt, String bookName) async* {
+    try {
+      final token = await localData.getToken();
+      final request = http.Request(
+        'GET',
+        Uri.parse('${UrlConst.baseUrl}/stream?prompt=$prompt'),
+      );
+      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Cache-Control'] = 'no-cache';
+      request.headers['Accept'] = 'text/event-stream';
+
+      final response = await client.send(request);
+
+      if (response.statusCode == 200) {
+        await for (final chunk in response.stream.transform(utf8.decoder)) {
+            // Parse SSE format: "event: message\ndata: <content>\n\n"
+            final lines = chunk.split('\n');
+            for (final line in lines) {
+              if (line.startsWith('data: ')) {
+                yield line.substring(6);
+              }
+            }
+        }
+      } else {
+        throw Exception('Failed to stream chat response: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error streaming chat: $e');
+      throw Exception('Connection failed');
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:ethio_book_store/features/books/presentation/widgets/coverPlaceHolder.dart';
+import 'package:ethio_book_store/core/const/url_const.dart';
 import 'package:flutter/material.dart';
 
 class CoverImage extends StatelessWidget {
@@ -11,8 +12,13 @@ class CoverImage extends StatelessWidget {
     if (url == null || url!.isEmpty) {
       return const CoverPlaceholder();
     }
+    String imagePath = url!;
+    if (!imagePath.startsWith('http')) {
+      imagePath = "${UrlConst.baseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}";
+    }
+    
     return Image.network(
-      url!,
+      imagePath,
       fit: BoxFit.cover,
       alignment: Alignment.center,
       // Lightweight shimmer-ish loading
