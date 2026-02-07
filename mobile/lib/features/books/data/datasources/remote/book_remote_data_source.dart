@@ -6,6 +6,7 @@ import 'package:ethio_book_store/core/const/url_const.dart';
 import 'package:ethio_book_store/features/auth/data/datasources/local/localdata.dart';
 import 'package:ethio_book_store/features/books/data/datasources/local/bookLocal.dart';
 import 'package:ethio_book_store/features/books/data/models/bookModel.dart';
+import 'package:ethio_book_store/features/books/domain/entities/download_update.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
@@ -13,7 +14,7 @@ abstract class BookRemoteDataSource {
   Future<List<BookModel>> fetchBooks(int page, int limit);
   Future<BookModel> fetchBook(String id);
   Future<void> uploadBook(BookModel book);
-  Future<(String, String)> downloadBook(String id);
+  Stream<DownloadUpdate> downloadBook(String id);
 }
 
 class BookRemoteDataSourceImpl implements BookRemoteDataSource {
@@ -84,6 +85,12 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         final dynamic data = decoded['data'];
+        
+        // Backend returns {"data": {"book": {...}}}
+        if (data is Map && data['book'] != null) {
+          return BookModel.fromJson(data['book']);
+        }
+        
         return BookModel.fromJson(data);
       } else if (response.statusCode == 401) {
         throw Exception(json.decode(response.body)['error']);
@@ -161,7 +168,7 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
 }
 
   @override
-  Future<(String, String)> downloadBook(String id) async {
+  Stream<DownloadUpdate> downloadBook(String id) async* {
     try {
       final book = await fetchBook(id);
       final dir = await getApplicationDocumentsDirectory();
@@ -173,24 +180,71 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
 
       final String bookName = '${book.id}.pdf';
       final String coverName = '${book.id}_cover.jpg';
-      final String url = book.bookUrl;
       final bookPath = '${booksDir.path}/$bookName';
       final coverPath = '${booksDir.path}/$coverName';
       final file = File(bookPath);
       final coverFile = File(coverPath);
 
-      final response = await httpClient.get(Uri.parse(url));
-      final coverResponse = await httpClient.get(Uri.parse(book.coverUrl));
-      if (response.statusCode == 200 && coverResponse.statusCode == 200) {
-        await file.writeAsBytes(response.bodyBytes);
+      String url = book.bookUrl;
+      if (!url.startsWith('http')) {
+        if (!url.startsWith('/')) {
+          url = "/$url";
+        }
+        url = "${UrlConst.baseUrl}$url";
+      }
+      String coverUrl = book.coverUrl;
+      if (!coverUrl.startsWith('http')) {
+        if (!coverUrl.startsWith('/')) {
+          coverUrl = "/$coverUrl";
+        }
+        coverUrl = "${UrlConst.baseUrl}$coverUrl";
+      }
+
+      print("🔹 Downloading book from: $url");
+      print("🔹 Downloading cover from: $coverUrl");
+
+      // 1. Download cover first (usually small)
+      final coverResponse = await httpClient.get(Uri.parse(coverUrl));
+      if (coverResponse.statusCode == 200) {
         await coverFile.writeAsBytes(coverResponse.bodyBytes);
-        return (bookPath, coverPath);
+        yield DownloadUpdate(progress: 0.05); // 5% done after cover
       } else {
-        throw Exception('Failed to download book');
+        throw Exception('Failed to download cover: ${coverResponse.statusCode}');
+      }
+
+      // 2. Download book with progress
+      final request = http.Request('GET', Uri.parse(url));
+      final response = await httpClient.send(request);
+
+      if (response.statusCode == 200) {
+        final totalBytes = response.contentLength ?? 0;
+        int downloadedBytes = 0;
+        List<int> bytes = [];
+
+        await for (var chunk in response.stream) {
+          bytes.addAll(chunk);
+          downloadedBytes += chunk.length;
+          
+          if (totalBytes > 0) {
+            double progress = 0.05 + (downloadedBytes / totalBytes * 0.94);
+            yield DownloadUpdate(progress: progress);
+          }
+        }
+
+        await file.writeAsBytes(bytes);
+        print("✅ Download successful: $bookPath");
+        yield DownloadUpdate(
+          progress: 1.0,
+          bookPath: bookPath,
+          coverPath: coverPath,
+          isCompleted: true,
+        );
+      } else {
+        throw Exception('Failed to download book: ${response.statusCode}');
       }
     } catch (e) {
-      log("Failed to download book: $e");
-      return Future.error(Exception("Failed to download book: $e"));
+      print("❌ Failed to download book: $e");
+      throw Exception("Failed to download book: $e");
     }
   }
 }

@@ -113,6 +113,30 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _lastReadPageMeta = const VerificationMeta(
+    'lastReadPage',
+  );
+  @override
+  late final GeneratedColumn<int> lastReadPage = GeneratedColumn<int>(
+    'last_read_page',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _totalPagesMeta = const VerificationMeta(
+    'totalPages',
+  );
+  @override
+  late final GeneratedColumn<int> totalPages = GeneratedColumn<int>(
+    'total_pages',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _tagMeta = const VerificationMeta('tag');
   @override
   late final GeneratedColumn<String> tag = GeneratedColumn<String>(
@@ -134,6 +158,8 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     coverUrl,
     sharedBy,
     bookUrl,
+    lastReadPage,
+    totalPages,
     tag,
   ];
   @override
@@ -223,6 +249,21 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     } else if (isInserting) {
       context.missing(_bookUrlMeta);
     }
+    if (data.containsKey('last_read_page')) {
+      context.handle(
+        _lastReadPageMeta,
+        lastReadPage.isAcceptableOrUnknown(
+          data['last_read_page']!,
+          _lastReadPageMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_pages')) {
+      context.handle(
+        _totalPagesMeta,
+        totalPages.isAcceptableOrUnknown(data['total_pages']!, _totalPagesMeta),
+      );
+    }
     if (data.containsKey('tag')) {
       context.handle(
         _tagMeta,
@@ -278,6 +319,14 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.string,
         data['${effectivePrefix}book_url'],
       )!,
+      lastReadPage: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_read_page'],
+      )!,
+      totalPages: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_pages'],
+      )!,
       tag: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}tag'],
@@ -302,6 +351,8 @@ class Book extends DataClass implements Insertable<Book> {
   final String coverUrl;
   final String sharedBy;
   final String bookUrl;
+  final int lastReadPage;
+  final int totalPages;
   final String? tag;
   const Book({
     required this.id,
@@ -314,6 +365,8 @@ class Book extends DataClass implements Insertable<Book> {
     required this.coverUrl,
     required this.sharedBy,
     required this.bookUrl,
+    required this.lastReadPage,
+    required this.totalPages,
     this.tag,
   });
   @override
@@ -329,6 +382,8 @@ class Book extends DataClass implements Insertable<Book> {
     map['cover_url'] = Variable<String>(coverUrl);
     map['shared_by'] = Variable<String>(sharedBy);
     map['book_url'] = Variable<String>(bookUrl);
+    map['last_read_page'] = Variable<int>(lastReadPage);
+    map['total_pages'] = Variable<int>(totalPages);
     if (!nullToAbsent || tag != null) {
       map['tag'] = Variable<String>(tag);
     }
@@ -347,6 +402,8 @@ class Book extends DataClass implements Insertable<Book> {
       coverUrl: Value(coverUrl),
       sharedBy: Value(sharedBy),
       bookUrl: Value(bookUrl),
+      lastReadPage: Value(lastReadPage),
+      totalPages: Value(totalPages),
       tag: tag == null && nullToAbsent ? const Value.absent() : Value(tag),
     );
   }
@@ -367,6 +424,8 @@ class Book extends DataClass implements Insertable<Book> {
       coverUrl: serializer.fromJson<String>(json['coverUrl']),
       sharedBy: serializer.fromJson<String>(json['sharedBy']),
       bookUrl: serializer.fromJson<String>(json['bookUrl']),
+      lastReadPage: serializer.fromJson<int>(json['lastReadPage']),
+      totalPages: serializer.fromJson<int>(json['totalPages']),
       tag: serializer.fromJson<String?>(json['tag']),
     );
   }
@@ -384,6 +443,8 @@ class Book extends DataClass implements Insertable<Book> {
       'coverUrl': serializer.toJson<String>(coverUrl),
       'sharedBy': serializer.toJson<String>(sharedBy),
       'bookUrl': serializer.toJson<String>(bookUrl),
+      'lastReadPage': serializer.toJson<int>(lastReadPage),
+      'totalPages': serializer.toJson<int>(totalPages),
       'tag': serializer.toJson<String?>(tag),
     };
   }
@@ -399,6 +460,8 @@ class Book extends DataClass implements Insertable<Book> {
     String? coverUrl,
     String? sharedBy,
     String? bookUrl,
+    int? lastReadPage,
+    int? totalPages,
     Value<String?> tag = const Value.absent(),
   }) => Book(
     id: id ?? this.id,
@@ -411,6 +474,8 @@ class Book extends DataClass implements Insertable<Book> {
     coverUrl: coverUrl ?? this.coverUrl,
     sharedBy: sharedBy ?? this.sharedBy,
     bookUrl: bookUrl ?? this.bookUrl,
+    lastReadPage: lastReadPage ?? this.lastReadPage,
+    totalPages: totalPages ?? this.totalPages,
     tag: tag.present ? tag.value : this.tag,
   );
   Book copyWithCompanion(BooksCompanion data) {
@@ -427,6 +492,12 @@ class Book extends DataClass implements Insertable<Book> {
       coverUrl: data.coverUrl.present ? data.coverUrl.value : this.coverUrl,
       sharedBy: data.sharedBy.present ? data.sharedBy.value : this.sharedBy,
       bookUrl: data.bookUrl.present ? data.bookUrl.value : this.bookUrl,
+      lastReadPage: data.lastReadPage.present
+          ? data.lastReadPage.value
+          : this.lastReadPage,
+      totalPages: data.totalPages.present
+          ? data.totalPages.value
+          : this.totalPages,
       tag: data.tag.present ? data.tag.value : this.tag,
     );
   }
@@ -444,6 +515,8 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('coverUrl: $coverUrl, ')
           ..write('sharedBy: $sharedBy, ')
           ..write('bookUrl: $bookUrl, ')
+          ..write('lastReadPage: $lastReadPage, ')
+          ..write('totalPages: $totalPages, ')
           ..write('tag: $tag')
           ..write(')'))
         .toString();
@@ -461,6 +534,8 @@ class Book extends DataClass implements Insertable<Book> {
     coverUrl,
     sharedBy,
     bookUrl,
+    lastReadPage,
+    totalPages,
     tag,
   );
   @override
@@ -477,6 +552,8 @@ class Book extends DataClass implements Insertable<Book> {
           other.coverUrl == this.coverUrl &&
           other.sharedBy == this.sharedBy &&
           other.bookUrl == this.bookUrl &&
+          other.lastReadPage == this.lastReadPage &&
+          other.totalPages == this.totalPages &&
           other.tag == this.tag);
 }
 
@@ -491,6 +568,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<String> coverUrl;
   final Value<String> sharedBy;
   final Value<String> bookUrl;
+  final Value<int> lastReadPage;
+  final Value<int> totalPages;
   final Value<String?> tag;
   final Value<int> rowid;
   const BooksCompanion({
@@ -504,6 +583,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.coverUrl = const Value.absent(),
     this.sharedBy = const Value.absent(),
     this.bookUrl = const Value.absent(),
+    this.lastReadPage = const Value.absent(),
+    this.totalPages = const Value.absent(),
     this.tag = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -518,6 +599,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     required String coverUrl,
     required String sharedBy,
     required String bookUrl,
+    this.lastReadPage = const Value.absent(),
+    this.totalPages = const Value.absent(),
     this.tag = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -540,6 +623,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<String>? coverUrl,
     Expression<String>? sharedBy,
     Expression<String>? bookUrl,
+    Expression<int>? lastReadPage,
+    Expression<int>? totalPages,
     Expression<String>? tag,
     Expression<int>? rowid,
   }) {
@@ -554,6 +639,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (coverUrl != null) 'cover_url': coverUrl,
       if (sharedBy != null) 'shared_by': sharedBy,
       if (bookUrl != null) 'book_url': bookUrl,
+      if (lastReadPage != null) 'last_read_page': lastReadPage,
+      if (totalPages != null) 'total_pages': totalPages,
       if (tag != null) 'tag': tag,
       if (rowid != null) 'rowid': rowid,
     });
@@ -570,6 +657,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<String>? coverUrl,
     Value<String>? sharedBy,
     Value<String>? bookUrl,
+    Value<int>? lastReadPage,
+    Value<int>? totalPages,
     Value<String?>? tag,
     Value<int>? rowid,
   }) {
@@ -584,6 +673,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
       coverUrl: coverUrl ?? this.coverUrl,
       sharedBy: sharedBy ?? this.sharedBy,
       bookUrl: bookUrl ?? this.bookUrl,
+      lastReadPage: lastReadPage ?? this.lastReadPage,
+      totalPages: totalPages ?? this.totalPages,
       tag: tag ?? this.tag,
       rowid: rowid ?? this.rowid,
     );
@@ -622,6 +713,12 @@ class BooksCompanion extends UpdateCompanion<Book> {
     if (bookUrl.present) {
       map['book_url'] = Variable<String>(bookUrl.value);
     }
+    if (lastReadPage.present) {
+      map['last_read_page'] = Variable<int>(lastReadPage.value);
+    }
+    if (totalPages.present) {
+      map['total_pages'] = Variable<int>(totalPages.value);
+    }
     if (tag.present) {
       map['tag'] = Variable<String>(tag.value);
     }
@@ -644,6 +741,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('coverUrl: $coverUrl, ')
           ..write('sharedBy: $sharedBy, ')
           ..write('bookUrl: $bookUrl, ')
+          ..write('lastReadPage: $lastReadPage, ')
+          ..write('totalPages: $totalPages, ')
           ..write('tag: $tag, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -674,6 +773,8 @@ typedef $$BooksTableCreateCompanionBuilder =
       required String coverUrl,
       required String sharedBy,
       required String bookUrl,
+      Value<int> lastReadPage,
+      Value<int> totalPages,
       Value<String?> tag,
       Value<int> rowid,
     });
@@ -689,6 +790,8 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<String> coverUrl,
       Value<String> sharedBy,
       Value<String> bookUrl,
+      Value<int> lastReadPage,
+      Value<int> totalPages,
       Value<String?> tag,
       Value<int> rowid,
     });
@@ -748,6 +851,16 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<String> get bookUrl => $composableBuilder(
     column: $table.bookUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastReadPage => $composableBuilder(
+    column: $table.lastReadPage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalPages => $composableBuilder(
+    column: $table.totalPages,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -816,6 +929,16 @@ class $$BooksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get lastReadPage => $composableBuilder(
+    column: $table.lastReadPage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalPages => $composableBuilder(
+    column: $table.totalPages,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get tag => $composableBuilder(
     column: $table.tag,
     builder: (column) => ColumnOrderings(column),
@@ -863,6 +986,16 @@ class $$BooksTableAnnotationComposer
   GeneratedColumn<String> get bookUrl =>
       $composableBuilder(column: $table.bookUrl, builder: (column) => column);
 
+  GeneratedColumn<int> get lastReadPage => $composableBuilder(
+    column: $table.lastReadPage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalPages => $composableBuilder(
+    column: $table.totalPages,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get tag =>
       $composableBuilder(column: $table.tag, builder: (column) => column);
 }
@@ -905,6 +1038,8 @@ class $$BooksTableTableManager
                 Value<String> coverUrl = const Value.absent(),
                 Value<String> sharedBy = const Value.absent(),
                 Value<String> bookUrl = const Value.absent(),
+                Value<int> lastReadPage = const Value.absent(),
+                Value<int> totalPages = const Value.absent(),
                 Value<String?> tag = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BooksCompanion(
@@ -918,6 +1053,8 @@ class $$BooksTableTableManager
                 coverUrl: coverUrl,
                 sharedBy: sharedBy,
                 bookUrl: bookUrl,
+                lastReadPage: lastReadPage,
+                totalPages: totalPages,
                 tag: tag,
                 rowid: rowid,
               ),
@@ -933,6 +1070,8 @@ class $$BooksTableTableManager
                 required String coverUrl,
                 required String sharedBy,
                 required String bookUrl,
+                Value<int> lastReadPage = const Value.absent(),
+                Value<int> totalPages = const Value.absent(),
                 Value<String?> tag = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BooksCompanion.insert(
@@ -946,6 +1085,8 @@ class $$BooksTableTableManager
                 coverUrl: coverUrl,
                 sharedBy: sharedBy,
                 bookUrl: bookUrl,
+                lastReadPage: lastReadPage,
+                totalPages: totalPages,
                 tag: tag,
                 rowid: rowid,
               ),

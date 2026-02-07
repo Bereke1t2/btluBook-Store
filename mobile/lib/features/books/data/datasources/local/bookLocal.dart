@@ -7,6 +7,7 @@ abstract class BookLocalDataSource {
   Future<BookModel> getBook(String id);
   Future<List<BookModel>> getCachedBooks();
   Future<void> clearCache();
+  Future<void> updateReadingProgress(String id, int page, int totalPages);
 }
 
 
@@ -28,8 +29,20 @@ class BookLocalDataSourceImpl implements BookLocalDataSource {
         coverUrl: book.coverUrl,
         sharedBy: book.sharedBy,
         bookUrl: book.bookUrl,
+        lastReadPage: Value(book.lastReadPage),
+        totalPages: Value(book.totalPages),
       ),
     )).toList();
+  }
+
+  @override
+  Future<void> updateReadingProgress(String id, int page, int totalPages) async {
+    await (database.update(database.books)
+      ..where((tbl) => tbl.id.equals(id)))
+      .write(BooksCompanion(
+        lastReadPage: Value(page),
+        totalPages: Value(totalPages),
+      ));
   }
 
   @override
@@ -51,6 +64,8 @@ class BookLocalDataSourceImpl implements BookLocalDataSource {
       coverUrl: bookRow.coverUrl,
       sharedBy: bookRow.sharedBy,
       bookUrl: bookRow.bookUrl,
+      lastReadPage: bookRow.lastReadPage,
+      totalPages: bookRow.totalPages,
     );
   }
 
@@ -70,6 +85,8 @@ class BookLocalDataSourceImpl implements BookLocalDataSource {
         coverUrl: bookRow.coverUrl,
         sharedBy: bookRow.sharedBy,
         bookUrl: bookRow.bookUrl,
+        lastReadPage: bookRow.lastReadPage,
+        totalPages: bookRow.totalPages,
       );
     }).toList();
   }

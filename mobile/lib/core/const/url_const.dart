@@ -1,5 +1,5 @@
 class UrlConst {
-  static const String baseUrl = "http://10.240.68.170:9090";
+  static const String baseUrl = "http://192.168.0.201:9090";
 
 
   static const String loginEndpoint = "/auth/login";
@@ -22,4 +22,7 @@ class UrlConst {
   static const String userProfileEndpoint ="/users";
   static const String updateProfileEndpoint ="/users";
 
-}
+  // Notes
+  static const String notesEndpoint = "/notes";
+  static const String aiNotesEndpoint = "/notes/ai";
+} 
