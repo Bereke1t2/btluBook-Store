@@ -32,6 +32,11 @@ func NewGeminiClient(apiKey string, ctx context.Context) (*GeminiClient, error) 
 	}, nil
 }
 
+// Model returns the underlying GenerativeModel for external use.
+func (c *GeminiClient) Model() *genai.GenerativeModel {
+	return c.model
+}
+
 type ChatResponseImpl struct {
 	geminiClient *GeminiClient
 }
@@ -80,7 +85,7 @@ func parseQuizzes[T any](raw string) ([]T, error) {
 
 func (r *ChatResponseImpl) GetMultipleChoiceQuestion(id string, prompt string) ([]*chat.MultipleQuiz, error) {
 	// For the Free Lite model, keep tokens lower to avoid hitting the "Tokens Per Minute" limit
-	r.geminiClient.model.SetMaxOutputTokens(4000) 
+	r.geminiClient.model.SetMaxOutputTokens(4000)
 	r.geminiClient.model.SetTemperature(0.2)
 	r.geminiClient.model.ResponseMIMEType = "application/json"
 
@@ -113,13 +118,19 @@ func (r *ChatResponseImpl) GetTrueFalseQuestion(id string, prompt string) ([]*ch
 	r.geminiClient.model.ResponseMIMEType = "application/json"
 	resp, err := r.geminiClient.model.GenerateContent(r.geminiClient.ctx, genai.Text(prompt))
 
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	raw := extractText(resp)
 	print(raw)
 	quizzes, err := parseQuizzes[chat.TrueFalse](raw)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	result := make([]*chat.TrueFalse, len(quizzes))
-	for i := range quizzes { result[i] = &quizzes[i] }
+	for i := range quizzes {
+		result[i] = &quizzes[i]
+	}
 	return result, nil
 }
 
@@ -127,13 +138,19 @@ func (r *ChatResponseImpl) GetShortAnswerQuestion(id string, prompt string) ([]*
 	r.geminiClient.model.SetMaxOutputTokens(2000)
 	r.geminiClient.model.ResponseMIMEType = "application/json"
 	resp, err := r.geminiClient.model.GenerateContent(r.geminiClient.ctx, genai.Text(prompt))
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	raw := extractText(resp)
 	print(raw)
 	quizzes, err := parseQuizzes[chat.ShortAnswer](raw)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	result := make([]*chat.ShortAnswer, len(quizzes))
-	for i := range quizzes { result[i] = &quizzes[i] }
+	for i := range quizzes {
+		result[i] = &quizzes[i]
+	}
 	return result, nil
 }
 
@@ -141,6 +158,36 @@ func (r *ChatResponseImpl) GetChatResponses(chatID int, prompt string) (*chat.Ch
 	r.geminiClient.model.SetMaxOutputTokens(1000)
 	r.geminiClient.model.ResponseMIMEType = "text/plain"
 	resp, err := r.geminiClient.model.GenerateContent(r.geminiClient.ctx, genai.Text(prompt))
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	return &chat.ChatResponse{ID: chatID, ChatID: chatID, Message: extractText(resp)}, nil
+}
+
+// GetChatResponseStream returns a channel that streams response chunks
+func (r *ChatResponseImpl) GetChatResponseStream(ctx context.Context, prompt string) (<-chan string, error) {
+	r.geminiClient.model.SetMaxOutputTokens(1000)
+	r.geminiClient.model.ResponseMIMEType = "text/plain"
+
+	iter := r.geminiClient.model.GenerateContentStream(ctx, genai.Text(prompt))
+	stream := make(chan string)
+
+	go func() {
+		defer close(stream)
+		for {
+			resp, err := iter.Next()
+			if err != nil {
+				return
+			}
+			if resp != nil && len(resp.Candidates) > 0 {
+				for _, part := range resp.Candidates[0].Content.Parts {
+					if t, ok := part.(genai.Text); ok {
+						stream <- string(t)
+					}
+				}
+			}
+		}
+	}()
+
+	return stream, nil
 }

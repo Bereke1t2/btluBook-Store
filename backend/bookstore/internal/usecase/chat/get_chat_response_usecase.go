@@ -1,4 +1,4 @@
-package chat
+package usecase
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ func NewGetChatResponseUseCase(chatRepo chat.ChatRepository) *GetChatResponseUse
 	}
 }
 func (uc *GetChatResponseUseCase) Execute(chatID int, prompt string, bookName string) (*chat.ChatResponse, error) {
-    // We wrap the user's prompt with system instructions
+	// We wrap the user's prompt with system instructions
 	formattedPrompt := fmt.Sprintf(`
 You are the "Bookstore Concierge," a knowledgeable and friendly AI. 
 Your goal is to answer questions about the book "%s" for a customer.

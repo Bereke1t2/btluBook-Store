@@ -1,4 +1,4 @@
-package chat
+package usecase
 
 import (
 	"fmt"

@@ -12,38 +12,40 @@ type CreateBook struct {
 	repo     book.BookRepository
 	supabase *supabase.SupabaseClient
 }
+
 func NewCreateBookUseCase(repo book.BookRepository, supabase *supabase.SupabaseClient) *CreateBook {
 	return &CreateBook{repo: repo, supabase: supabase}
 }
 
 func (uc *CreateBook) Execute(ctx context.Context, b *book.Book) (*book.Book, error) {
-	// Ensure we have an ID before using it in storage paths
-	b.ID = UUIDGenerator()
-
-	// Upload book image to Supabase
-	if b.CoverUrl != "" {
-		imageURL, err := uc.supabase.UploadToSupabase(b.CoverUrl, "images/"+b.ID, "images")
-		if err != nil {
-			return nil, err
-		}
-		b.CoverUrl = imageURL
+	// Ensure we have an ID
+	if b.ID == "" {
+		b.ID = UUIDGenerator()
 	}
 
-	// Upload book file to Supabase
-	if b.BookURL != "" {
-		bookURL, err := uc.supabase.UploadToSupabase(b.BookURL, "files/"+b.ID, "books")
-		if err != nil {
-			return nil, err
-		}
-		b.BookURL = bookURL
+	// Local storage fallback: Supabase DNS (aeavumvbwryxbcfksepd.supabase.co) is failing.
+	// We keep the files in the 'uploads' folder and return web-relative paths.
+
+	if b.CoverUrl != "" && !isValidURL(b.CoverUrl) {
+		// Convert "uploads/xxx.jpg" to "/uploads/xxx.jpg"
+		b.CoverUrl = "/" + b.CoverUrl
 	}
 
-	// Persist book
+	if b.BookURL != "" && !isValidURL(b.BookURL) {
+		// Convert "uploads/xxx.pdf" to "/uploads/xxx.pdf"
+		b.BookURL = "/" + b.BookURL
+	}
+
+	// Persist book to database
 	createdBook, err := uc.repo.CreateBook(b)
 	if err != nil {
 		return nil, err
 	}
 	return createdBook, nil
+}
+
+func isValidURL(url string) bool {
+	return len(url) > 4 && url[:4] == "http"
 }
 
 func UUIDGenerator() string {

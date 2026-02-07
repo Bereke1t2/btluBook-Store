@@ -1,12 +1,17 @@
 package handlers
 
 import (
+	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	book "github.com/bereke1t2/bookstore/internal/domain/book"
 	usecase "github.com/bereke1t2/bookstore/internal/usecase/book"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type BookHandler struct {
@@ -146,8 +151,16 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		return
 	}
 
-	// Save cover image
-	coverPath := "./uploads/" + coverFile.Filename
+	// Save cover image to temp file with unique name
+	coverExt := filepath.Ext(coverFile.Filename)
+	coverName := fmt.Sprintf("%s%s", uuid.New().String(), coverExt)
+	coverPath := filepath.Join("uploads", coverName)
+
+	// Ensure uploads directory exists
+	if _, err := os.Stat("uploads"); os.IsNotExist(err) {
+		os.Mkdir("uploads", 0755)
+	}
+
 	if err := c.SaveUploadedFile(coverFile, coverPath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save cover image"})
 		return
@@ -160,7 +173,10 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		return
 	}
 
-	bookPath := "./uploads/" + bookFile.Filename
+	bookExt := filepath.Ext(bookFile.Filename)
+	bookName := fmt.Sprintf("%s%s", uuid.New().String(), bookExt)
+	bookPath := filepath.Join("uploads", bookName)
+
 	if err := c.SaveUploadedFile(bookFile, bookPath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save book file"})
 		return
@@ -168,21 +184,22 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 
 	// 4. Create Book entity
 	newBook := book.Book{
-		Title:       title,
-		Author:      author,
+		Title:      title,
+		Author:     author,
 		Category:   category,
-		SharedBy: sharedBy,
-		Price:       price,
-		Rating:      rating,
-		Tag:         tag,
-		IsFeatured:  isFeatured,
-		CoverUrl:    coverPath,
-		BookURL:     bookPath,
+		SharedBy:   sharedBy,
+		Price:      price,
+		Rating:     rating,
+		Tag:        tag,
+		IsFeatured: isFeatured,
+		CoverUrl:   coverPath,
+		BookURL:    bookPath,
 	}
 
 	// 5. Call use case
 	createdBook, err := h.createBookUseCase.Execute(c.Request.Context(), &newBook)
 	if err != nil {
+		log.Printf("❌ Failed to create book usecase: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -193,4 +210,3 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		},
 	})
 }
-
