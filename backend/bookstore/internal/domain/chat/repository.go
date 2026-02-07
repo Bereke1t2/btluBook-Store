@@ -1,9 +1,13 @@
 package chat
 
+import (
+	"context"
+)
 
 type ChatRepository interface {
-	GetMultipleChoiceQuestion(id string , bookName string) ([]*MultipleQuiz, error)
-	GetTrueFalseQuestion(id string , bookName string) ([]*TrueFalse, error)
-	GetShortAnswerQuestion(id string , bookName string) ([]*ShortAnswer, error)
-	GetChatResponses(chatID int , prompt string) (*ChatResponse, error)
+	GetMultipleChoiceQuestion(id string, bookName string) ([]*MultipleQuiz, error)
+	GetTrueFalseQuestion(id string, bookName string) ([]*TrueFalse, error)
+	GetShortAnswerQuestion(id string, bookName string) ([]*ShortAnswer, error)
+	GetChatResponses(chatID int, prompt string) (*ChatResponse, error)
+	GetChatResponseStream(ctx context.Context, prompt string) (<-chan string, error)
 }

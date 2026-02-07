@@ -1,7 +1,5 @@
 package supabase
 
-
-
 import (
 	"bytes"
 	"fmt"
@@ -11,19 +9,21 @@ import (
 	"os"
 	"path/filepath"
 )
+
 type SupabaseClient struct {
-	BaseURL   string
-	AnonKey   string
+	BaseURL string
+	AnonKey string
 }
+
 func NewSupabaseClient(baseURL, anonKey string) *SupabaseClient {
 	return &SupabaseClient{
-		BaseURL:   baseURL,
-		AnonKey:   anonKey,
+		BaseURL: baseURL,
+		AnonKey: anonKey,
 	}
 }
 
 // Upload file to Supabase Storage
-func (c *SupabaseClient) UploadToSupabase(filePath, fileName , bucketName string) (string, error) {
+func (c *SupabaseClient) UploadToSupabase(filePath, fileName, bucketName string) (string, error) {
 	print("Uploading to Supabase Storage...")
 	// Read file data
 	fileData, err := os.ReadFile(filePath)
@@ -33,6 +33,8 @@ func (c *SupabaseClient) UploadToSupabase(filePath, fileName , bucketName string
 
 	// Create upload URL
 	uploadURL := fmt.Sprintf("%s/storage/v1/object/%s/%s", c.BaseURL, bucketName, fileName)
+	log.Printf("🔹 Uploading to: %s", uploadURL)
+
 	anonKey := c.AnonKey
 	// Create HTTP request
 	req, err := http.NewRequest("POST", uploadURL, bytes.NewReader(fileData))
@@ -40,15 +42,20 @@ func (c *SupabaseClient) UploadToSupabase(filePath, fileName , bucketName string
 		return "", fmt.Errorf("failed to create request: %v", err)
 	}
 
+	// Detect content type
+	contentType := http.DetectContentType(fileData)
+	log.Printf("🔹 Detected Content-Type: %s", contentType)
+
 	// Set headers
 	req.Header.Set("Authorization", "Bearer "+anonKey)
-	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("Content-Type", contentType)
 	req.Header.Set("Cache-Control", "no-cache")
 
 	// Send request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("❌ Network Error during Supabase upload: %v", err)
 		return "", fmt.Errorf("failed to upload: %v", err)
 	}
 	defer resp.Body.Close()
@@ -56,6 +63,7 @@ func (c *SupabaseClient) UploadToSupabase(filePath, fileName , bucketName string
 	// Check response
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
+		log.Printf("❌ Supabase Upload Failed. Status: %d, Body: %s", resp.StatusCode, string(body))
 		return "", fmt.Errorf("upload failed (%d): %s", resp.StatusCode, string(body))
 	}
 
@@ -129,7 +137,7 @@ func (c *SupabaseClient) ListFilesInBucket(bucketName string) ([]string, error) 
 	anonKey := c.AnonKey
 	// Create list URL
 	listURL := fmt.Sprintf("%s/storage/v1/object/list/%s", supabaseURL, bucketName)
-	
+
 	// Create HTTP request
 	req, err := http.NewRequest("POST", listURL, nil)
 	if err != nil {
@@ -155,7 +163,7 @@ func (c *SupabaseClient) ListFilesInBucket(bucketName string) ([]string, error) 
 	}
 
 	log.Printf("📁 Files in bucket '%s': %s", bucketName, string(body))
-	
+
 	// Note: You would need to parse the JSON response properly
 	// This returns the raw response for simplicity
 	return []string{string(body)}, nil
