@@ -8,22 +8,27 @@ import 'package:ethio_book_store/features/chat/domain/usecases/getShortAnswerUse
 import 'package:ethio_book_store/features/chat/domain/usecases/getTrueFalseUsecase.dart';
 import 'package:meta/meta.dart';
 
+import 'package:ethio_book_store/features/chat/domain/usecases/streamChatResponseUsecase.dart';
+
 part 'chat_event.dart';
 part 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final GetChatResponseUseCase chatResponseUC;
+  final StreamChatResponseUseCase streamChatResponseUC; // Added
   final GetMultipleQuestionsUseCase multipleChooseUC;
   final GetShortAnswerUseCase shortAnswerUC;
   final GetTrueFalseUseCase trueFalseUC;
 
   ChatBloc({
     required this.chatResponseUC,
+    required this.streamChatResponseUC, // Added
     required this.multipleChooseUC,
     required this.shortAnswerUC,
     required this.trueFalseUC,
   }) : super(ChatInitial()) {
     on<GetChatResponseEvent>(_onLoadingResponse);
+    on<GetChatResponseStreamEvent>(_onStreamingResponse); // Added
     on<GetMultipleQuestionsEvent>(_onGetingMultipleQeustions);
     on<GetTrueFalseQuestionEvent>(_onGetingTrueFlase);
     on<GetShortAnswerQuestionEvent>(_onGetShortAnwer);
@@ -33,11 +38,28 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     GetChatResponseEvent event,
     Emitter<ChatState> emit,
   ) async {
+    // Keep for backward compatibility if needed, or remove
     emit(GetChatResponseLoadingState());
     final failureOrResponse = await chatResponseUC(event.prompt , event.bookName);
     failureOrResponse.fold(
       (failure) => emit(GetChatResponseFaliurState(failure.message)),
       (response) => emit(GetChatResponseSuccessState(response)),
+    );
+  }
+
+  Future<void> _onStreamingResponse(
+    GetChatResponseStreamEvent event,
+    Emitter<ChatState> emit,
+  ) async {
+    emit(GetChatResponseLoadingState());
+    
+    await emit.forEach(
+      streamChatResponseUC(event.prompt, event.bookName),
+      onData: (either) => either.fold(
+        (failure) => GetChatResponseFaliurState(failure.message),
+        (chunk) => GetChatResponseStreamingState(chunk),
+      ),
+      onError: (error, stackTrace) => GetChatResponseFaliurState(error.toString()),
     );
   }
 

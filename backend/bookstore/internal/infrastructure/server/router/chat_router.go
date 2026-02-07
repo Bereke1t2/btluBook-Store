@@ -5,6 +5,7 @@ import (
 	"github.com/bereke1t2/bookstore/internal/infrastructure/server/handlers"
 	"github.com/gin-gonic/gin"
 )
+
 func RegisterChatRoutes(r *gin.Engine, chatHandler *handlers.ChatHandler) {
 	chat := r.Group("/chats")
 
@@ -14,4 +15,5 @@ func RegisterChatRoutes(r *gin.Engine, chatHandler *handlers.ChatHandler) {
 	chat.POST("/responses/:id", chatHandler.GetChatResponses)
 	chat.POST("/questions/short-answer/:id", chatHandler.GetShortAnswerQuestion)
 	chat.POST("/questions/true-false/:id", chatHandler.GetTrueFalseQuestion)
+	r.GET("/stream", chatHandler.StreamChatResponses)
 }

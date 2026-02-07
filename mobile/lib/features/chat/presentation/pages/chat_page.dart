@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart'; // Added
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ethio_book_store/features/chat/presentation/bloc/chat_bloc.dart';
@@ -92,6 +93,12 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
+// Palette (Top-level for access from all classes)
+const Color ink = Color(0xFF0D1B2A);
+const Color slate = Color(0xFF233542);
+const Color leather = Color(0xFF3A2F2A);
+const Color accentGold = Color(0xFFF2C94C);
+
 class _ChatPageState extends State<ChatPage> with SingleTickerProviderStateMixin {
   final _messages = <ChatMessage>[];
   final _controller = TextEditingController();
@@ -104,12 +111,6 @@ class _ChatPageState extends State<ChatPage> with SingleTickerProviderStateMixin
   // Bloc
   late final ChatBloc _bloc;
   bool _sheetOpen = false;
-
-  // Palette
-  static const Color ink = Color(0xFF0D1B2A);
-  static const Color slate = Color(0xFF233542);
-  static const Color leather = Color(0xFF3A2F2A);
-  static const Color accentGold = Color(0xFFF2C94C);
 
   @override
   void initState() {
@@ -162,7 +163,7 @@ class _ChatPageState extends State<ChatPage> with SingleTickerProviderStateMixin
     }
 
     // Ask backend through BLoC
-    _bloc.add(GetChatResponseEvent(text , widget.bookTitle));
+    _bloc.add(GetChatResponseStreamEvent(text, widget.bookTitle));
   }
   // new year
 
@@ -276,25 +277,53 @@ class _ChatPageState extends State<ChatPage> with SingleTickerProviderStateMixin
       listener: (context, state) async {
         // Chat response
         if (state is GetChatResponseLoadingState) {
-          setState(() => _sending = true);
+          setState(() {
+            _sending = true;
+            // Only add placeholder if not already there (avoids duplication if state emits multiple times)
+            if (_messages.isEmpty || _messages.last.role != ChatRole.assistant || _messages.last.text.isNotEmpty) {
+               _messages.add(ChatMessage(
+                id: UniqueKey().toString(),
+                role: ChatRole.assistant,
+                text: '', // Start empty
+              ));
+            }
+          });
+          _scrollToBottom();
+        } else if (state is GetChatResponseStreamingState) {
+           setState(() {
+             // Append chunk to the last message (which is the assistant's placeholder)
+             if (_messages.isNotEmpty && _messages.last.role == ChatRole.assistant) {
+               final lastMsg = _messages.last;
+               _messages.removeLast();
+               _messages.add(ChatMessage(
+                 id: lastMsg.id,
+                 role: lastMsg.role,
+                 text: lastMsg.text + state.chunk,
+               ));
+             }
+           });
+           // Optional: Scroll to bottom on every chunk or throttle it
+           _scrollToBottom();
         } else if (state is GetChatResponseSuccessState) {
           setState(() {
-            _messages.add(ChatMessage(
-              id: UniqueKey().toString(),
-              role: ChatRole.assistant,
-              text: state.response,
-            ));
             _sending = false;
+             // If we were streaming, the message is already built up.
+             // If not streaming (fallback), we might just add the full text.
+             // But since we are streaming, we just mark sending as false.
           });
           _scrollToBottom();
         } else if (state is GetChatResponseFaliurState) {
           setState(() {
+            _sending = false;
+            if (_messages.isNotEmpty && _messages.last.role == ChatRole.assistant && _messages.last.text.isEmpty) {
+                // Remove empty placeholder if failed immediately
+                _messages.removeLast();
+            }
             _messages.add(ChatMessage(
               id: UniqueKey().toString(),
               role: ChatRole.assistant,
               text: state.message,
             ));
-            _sending = false;
           });
           _scrollToBottom();
         }
@@ -446,180 +475,192 @@ class _ChatPageState extends State<ChatPage> with SingleTickerProviderStateMixin
           _scrollToBottom();
         }
       },
-      child: Overlay(
-        initialEntries: [
-          OverlayEntry(
-            builder: (ctx) => Scaffold(
-              backgroundColor: Colors.transparent,
-              appBar: AppBar(
-                elevation: 0,
-                backgroundColor: Colors.transparent,
-                title: ShaderMask(
-                  shaderCallback: (r) => const LinearGradient(
-                    colors: [Colors.white, Color(0xFFFFF1CC), Color(0xFFF2C94C)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ).createShader(r),
-                  blendMode: BlendMode.srcIn,
-                  child: Text(
-                    '${widget.bookTitle} • AI Chat',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
-                ),
-                actions: [
-                  if (widget.isStudentBook)
-                    Tooltip(
-                      message: 'Start quiz',
-                      child: IconButton(
-                        onPressed: _sending ? null : () async {
-                          await _chooseQuizTypeAndStart();
-                        },
-                        icon: const Icon(Icons.quiz_outlined, color: Colors.white),
-                      ),
-                    ),
-                ],
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          title: ShaderMask(
+            shaderCallback: (r) => const LinearGradient(
+              colors: [Colors.white, Color(0xFFFFF1CC), Color(0xFFF2C94C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ).createShader(r),
+            blendMode: BlendMode.srcIn,
+            child: Text(
+              '${widget.bookTitle} • AI Chat',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
               ),
-              extendBodyBehindAppBar: true,
-              body: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [ink, slate, leather],
-                    stops: [0.0, 0.5, 1.0],
-                  ),
-                ).copyWith(
-                  gradient: LinearGradient(
-                    begin: begin,
-                    end: end,
-                    colors: const [ink, slate, leather],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
+            ),
+          ),
+          actions: [
+            if (widget.isStudentBook)
+              Tooltip(
+                message: 'Start quiz',
+                child: IconButton(
+                  onPressed: _sending ? null : () async {
+                    await _chooseQuizTypeAndStart();
+                  },
+                  icon: const Icon(Icons.quiz_outlined, color: Colors.white),
                 ),
-                child: SafeArea(
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: ListView.separated(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
-                          itemCount: _messages.length + (_sending ? 1 : 0),
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
-                          physics: const BouncingScrollPhysics(),
-                          itemBuilder: (context, index) {
-                            if (_sending && index == _messages.length) {
-                              return const _TypingBubble();
-                            }
-                            final msg = _messages[index];
-                            final isUser = msg.role == ChatRole.user;
+              ),
+          ],
+        ),
+        extendBodyBehindAppBar: true,
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [ink, slate, leather],
+              stops: [0.0, 0.5, 1.0],
+            ),
+          ).copyWith(
+            gradient: LinearGradient(
+              begin: begin,
+              end: end,
+              colors: const [ink, slate, leather],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView.separated(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+                    itemCount: _messages.length + (_sending ? 1 : 0),
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    physics: const BouncingScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      if (_sending && index == _messages.length) {
+                        return const _TypingBubble();
+                      }
+                      final msg = _messages[index];
+                      final isUser = msg.role == ChatRole.user;
 
-                            final bubbleColor = isUser
-                                ? Colors.white.withValues(alpha: 26 / 255)
-                                : Colors.white.withValues(alpha: 18 / 255);
-                            final borderColor = isUser
-                                ? accentGold
-                                : Colors.white.withValues(alpha: 56 / 255);
+                      final bubbleColor = isUser
+                          ? Colors.white.withValues(alpha: 26 / 255)
+                          : Colors.white.withValues(alpha: 18 / 255);
+                      final borderColor = isUser
+                          ? accentGold
+                          : Colors.white.withValues(alpha: 56 / 255);
 
-                            return Align(
-                              alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 560),
-                                child: GlassContainer(
-                                  color: bubbleColor,
-                                  borderColor: borderColor,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  child: SelectableText(
-                                    msg.text,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                      height: 1.35,
-                                    ),
-                                  ),
+                      return Align(
+                        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 560),
+                          child: GlassContainer(
+                            color: bubbleColor,
+                            borderColor: borderColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            child: MarkdownBody(
+                              data: msg.text,
+                              styleSheet: MarkdownStyleSheet(
+                                p: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  height: 1.35,
+                                ),
+                                strong: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                code: TextStyle(
+                                  color: Colors.black,
+                                  backgroundColor: Colors.white.withOpacity(0.9),
+                                  fontFamily: 'monospace',
+                                ),
+                                codeblockDecoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                            );
-                          },
+                              selectable: true,
+                            ),
+                          ),
                         ),
-                      ),
-                      _HintChips(
-                        onSelect: (v) {
-                          _controller.text = v;
-                          _controller.selection = TextSelection.fromPosition(TextPosition(offset: v.length));
-                        },
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
-              ),
-                bottomNavigationBar: AnimatedPadding(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                padding: EdgeInsets.only(
-                  left: 8,
-                  right: 8,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+                _HintChips(
+                  onSelect: (v) {
+                    _controller.text = v;
+                    _controller.selection = TextSelection.fromPosition(TextPosition(offset: v.length));
+                  },
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: GlassContainer(
-                  borderRadius: 18,
-                  blurSigma: 20,
-                  color: Colors.white.withValues(alpha: 26 / 255),
-                  borderColor: Colors.white.withValues(alpha: 64 / 255),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(
-                    children: [
-                    // Speech-to-text button
-                    _SpeechToTextButton(
-                      onTap: _sending ? null : () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Row(
-                              children: [
-                                Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: accentGold.withOpacity(0.2),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.mic, color: Colors.white, size: 18),
+              ],
+            ),
+          ),
+        ),
+        bottomNavigationBar: AnimatedPadding(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(
+            left: 8,
+            right: 8,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+          ),
+          child: SafeArea(
+            top: false,
+            child: GlassContainer(
+              borderRadius: 18,
+              blurSigma: 20,
+              color: Colors.white.withValues(alpha: 26 / 255),
+              borderColor: Colors.white.withValues(alpha: 64 / 255),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  _SpeechToTextButton(
+                    onTap: _sending ? null : () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: accentGold.withOpacity(0.2),
+                                  shape: BoxShape.circle,
                                 ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'Voice Input',
-                                        style: TextStyle(fontWeight: FontWeight.w700),
-                                      ),
-                                      Text(
-                                        'Speech-to-text coming soon!',
-                                        style: TextStyle(fontSize: 12, color: Colors.white70),
-                                      ),
-                                    ],
-                                  ),
+                                child: const Icon(Icons.mic, color: Colors.white, size: 18),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Voice Input',
+                                      style: TextStyle(fontWeight: FontWeight.w700),
+                                    ),
+                                    Text(
+                                      'Speech-to-text coming soon!',
+                                      style: TextStyle(fontSize: 12, color: Colors.white70),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            backgroundColor: slate,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            duration: const Duration(seconds: 2),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
+                          backgroundColor: slate,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
                       controller: _controller,
                       minLines: 1,
                       maxLines: 4,
@@ -631,13 +672,13 @@ class _ChatPageState extends State<ChatPage> with SingleTickerProviderStateMixin
                         hint: 'Ask about ${widget.bookTitle}...',
                         icon: Icons.chat_bubble_outline_rounded,
                       ),
-                      ),
                     ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      height: 44,
-                      width: 48,
-                      child: IconButton.filled(
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 44,
+                    width: 48,
+                    child: IconButton.filled(
                       style: ButtonStyle(
                         backgroundColor: WidgetStateProperty.all(accentGold),
                         foregroundColor: WidgetStateProperty.all(Colors.black),
@@ -645,31 +686,28 @@ class _ChatPageState extends State<ChatPage> with SingleTickerProviderStateMixin
                       ),
                       onPressed: _sending ? null : _sendMessage,
                       icon: const Icon(Icons.send_rounded),
-                      ),
                     ),
-                    ],
                   ),
-                  ),
-                ),
-                ),
-              floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-              floatingActionButton: widget.isStudentBook
-                  ? Padding(
-                      padding: const EdgeInsets.only(bottom: 86, right: 8),
-                      child: SafeArea(
-                        child: FloatingActionButton.extended(
-                          onPressed: _sending ? null : _chooseQuizTypeAndStart,
-                          backgroundColor: accentGold,
-                          foregroundColor: Colors.black,
-                          icon: const Icon(Icons.school_outlined),
-                          label: const Text('Quiz me', style: TextStyle(fontWeight: FontWeight.w800)),
-                        ),
-                      ),
-                    )
-                  : null,
+                ],
+              ),
             ),
           ),
-        ],
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: widget.isStudentBook
+            ? Padding(
+                padding: const EdgeInsets.only(bottom: 86, right: 8),
+                child: SafeArea(
+                  child: FloatingActionButton.extended(
+                    onPressed: _sending ? null : _chooseQuizTypeAndStart,
+                    backgroundColor: accentGold,
+                    foregroundColor: Colors.black,
+                    icon: const Icon(Icons.school_outlined),
+                    label: const Text('Quiz me', style: TextStyle(fontWeight: FontWeight.w800)),
+                  ),
+                ),
+              )
+            : null,
       ),
     );
   }
