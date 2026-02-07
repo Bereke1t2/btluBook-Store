@@ -20,15 +20,22 @@ import 'package:ethio_book_store/features/books/domain/usecases/getBook.dart';
 import 'package:ethio_book_store/features/books/domain/usecases/getBooks.dart';
 import 'package:ethio_book_store/features/books/domain/usecases/uploadBook.dart';
 import 'package:ethio_book_store/features/books/presentation/bloc/book_bloc.dart';
+import 'package:ethio_book_store/features/books/domain/usecases/get_downloaded_books.dart';
+import 'package:ethio_book_store/features/books/domain/usecases/update_reading_progress.dart';
 import 'package:ethio_book_store/features/chat/data/datasources/local/chat_local.dart';
 import 'package:ethio_book_store/features/chat/data/datasources/remote/chat_remote.dart';
 import 'package:ethio_book_store/features/chat/data/repositories/chat_repo.dart';
 import 'package:ethio_book_store/features/chat/domain/repositories/chat_repository.dart';
 import 'package:ethio_book_store/features/chat/domain/usecases/getMultipleQeustionsUsecase.dart';
 import 'package:ethio_book_store/features/chat/domain/usecases/getResponseUsecase.dart';
+import 'package:ethio_book_store/features/chat/domain/usecases/streamChatResponseUsecase.dart';
 import 'package:ethio_book_store/features/chat/domain/usecases/getShortAnswerUseacase.dart';
 import 'package:ethio_book_store/features/chat/domain/usecases/getTrueFalseUsecase.dart';
 import 'package:ethio_book_store/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:ethio_book_store/features/notes/data/datasources/note_remote_datasource.dart';
+import 'package:ethio_book_store/features/notes/data/repositories/note_repository_impl.dart';
+import 'package:ethio_book_store/features/notes/domain/repositories/note_repository.dart';
+import 'package:ethio_book_store/features/notes/presentation/bloc/note_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -45,15 +52,12 @@ Future<void> init() async {
       updateProfileUseCase: sl(),
    ));
 
-   sl.registerFactory(() => BookBloc(
-     getBooksUseCase: sl(),
-     getBookUseCase: sl(),
-     uploadBookUseCase: sl(),
-     downloadBookUseCase: sl(),
-   ));
+   // BookBloc definition moved below with new dependencies
+
 
    sl.registerFactory(() => ChatBloc(
      chatResponseUC: sl(),
+     streamChatResponseUC: sl(), // Added
      multipleChooseUC: sl(),
      shortAnswerUC: sl(),
      trueFalseUC: sl(),
@@ -71,10 +75,23 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DownloadBookUseCase(repository: sl()));
 
   sl.registerLazySingleton(() => GetChatResponseUseCase(sl()));
+  sl.registerLazySingleton(() => StreamChatResponseUseCase(sl())); // Added
   sl.registerLazySingleton(() => GetMultipleQuestionsUseCase(sl()));
   sl.registerLazySingleton(() => GetShortAnswerUseCase(sl()));
   sl.registerLazySingleton(() => GetTrueFalseUseCase(sl()));
   
+  // Book Features
+  sl.registerLazySingleton(() => GetDownloadedBooksUseCase(sl())); // Added
+  sl.registerLazySingleton(() => UpdateReadingProgressUseCase(sl())); // Added
+
+  sl.registerFactory(() => BookBloc(
+    getBooksUseCase: sl(),
+    getBookUseCase: sl(),
+    uploadBookUseCase: sl(),
+    downloadBookUseCase: sl(),
+    getDownloadedBooksUseCase: sl(), // Added
+    updateReadingProgressUseCase: sl(), // Added
+  ));
 
   // Repositories
   sl.registerLazySingleton<UserRepository>(
@@ -135,4 +152,13 @@ Future<void> init() async {
   sl.registerLazySingleton<Connectivity>(() => Connectivity());
 
   sl.registerLazySingleton<http.Client>(() => http.Client());
+
+  // Notes Feature
+  sl.registerLazySingleton<NoteRemoteDataSource>(
+    () => NoteRemoteDataSourceImpl(client: sl()),
+  );
+  sl.registerLazySingleton<NoteRepository>(
+    () => NoteRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerFactory(() => NoteBloc(repository: sl()));
 }

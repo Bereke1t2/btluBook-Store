@@ -16,6 +16,11 @@ class GetChatResponseFaliurState extends ChatState{
   GetChatResponseFaliurState(this.message);
 }
 
+class GetChatResponseStreamingState extends ChatState {
+  final String chunk;
+  GetChatResponseStreamingState(this.chunk);
+}
+
 
 
 
