@@ -1,11 +1,20 @@
+import 'package:ethio_book_store/core/const/url_const.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ethio_book_store/core/const/ui_const.dart';
 import 'package:ethio_book_store/core/const/app_typography.dart';
 import 'package:ethio_book_store/features/books/domain/entities/book.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/GlassContainer.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/animated_button.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/rating.dart';
+import 'package:ethio_book_store/features/notes/presentation/pages/notes_page.dart';
+import 'package:ethio_book_store/features/notes/presentation/bloc/note_bloc.dart';
+import 'package:ethio_book_store/injections.dart' as di;
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:ethio_book_store/features/books/presentation/bloc/book_bloc.dart';
+import 'package:ethio_book_store/features/reader/presentation/pages/pdf_reader_page.dart';
+import 'dart:io';
+
 
 /// Book Details Page with parallax cover, description, and actions.
 class BookDetailsPage extends StatefulWidget {
@@ -109,11 +118,13 @@ class _BookDetailsPageState extends State<BookDetailsPage>
 
   void _downloadBook() {
     // Trigger download via bloc
+    context.read<BookBloc>().add(DownloadBookEvent(widget.book.id));
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Downloading "${widget.book.title}"...'),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: UiConst.slate,
+        backgroundColor: const Color(0xFF233542),
       ),
     );
   }
@@ -134,6 +145,44 @@ class _BookDetailsPageState extends State<BookDetailsPage>
         backgroundColor: UiConst.slate,
       ),
     );
+  }
+
+  void _openNotes() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (_) => di.sl<NoteBloc>(),
+          child: NotesPage(
+            bookId: widget.book.id,
+            bookTitle: widget.book.title,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openBook(String filePath) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => di.sl<NoteBloc>()),
+            BlocProvider.value(value: context.read<BookBloc>()),
+          ],
+          child: PDFReaderPage(
+            filePath: filePath,
+            bookId: widget.book.id,
+            bookTitle: widget.book.title,
+            initialPage: widget.book.lastReadPage > 0 ? widget.book.lastReadPage - 1 : 0,
+          ),
+        ),
+      ),
+    ).then((_) {
+      // Optional: Refresh book details or progress if needed
+      context.read<BookBloc>().add(LoadBooksEvent());
+    });
   }
 
   @override
@@ -180,7 +229,9 @@ class _BookDetailsPageState extends State<BookDetailsPage>
                         Hero(
                           tag: widget.heroTag ?? 'book-${widget.book.id}',
                           child: CachedNetworkImage(
-                            imageUrl: widget.book.coverUrl,
+                            imageUrl: widget.book.coverUrl.startsWith('http') 
+                                ? widget.book.coverUrl 
+                                : "${UrlConst.baseUrl}${widget.book.coverUrl.startsWith('/') ? '' : '/'}${widget.book.coverUrl}",
                             fit: BoxFit.cover,
                             placeholder: (_, __) => Container(color: UiConst.slate),
                             errorWidget: (_, __, ___) => Container(
@@ -376,29 +427,33 @@ class _BookDetailsPageState extends State<BookDetailsPage>
             const SizedBox(height: 12),
 
             // Category and rating row
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(UiConst.radiusRound),
-                    color: Colors.white.withOpacity(0.1),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(UiConst.radiusRound),
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                    child: Text(
+                      widget.book.category,
+                      style: AppTypography.labelSmall,
+                    ),
                   ),
-                  child: Text(
-                    widget.book.category,
-                    style: AppTypography.labelSmall,
+                  const SizedBox(width: 12),
+                  Rating(rating: widget.book.rating, size: 16),
+                  const SizedBox(width: 20),
+                  // Favorite button
+                  AnimatedFavoriteButton(
+                    isFavorite: _isFavorite,
+                    onTap: _toggleFavorite,
+                    size: 22,
                   ),
-                ),
-                const SizedBox(width: 12),
-                Rating(rating: widget.book.rating, size: 16),
-                const Spacer(),
-                // Favorite button
-                AnimatedFavoriteButton(
-                  isFavorite: _isFavorite,
-                  onTap: _toggleFavorite,
-                  size: 22,
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -519,24 +574,82 @@ The book has received numerous accolades and continues to inspire readers around
   Widget _buildActionsSection() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: AnimatedButton(
-              label: 'Download',
-              icon: Icons.download_rounded,
-              isPrimary: true,
-              onTap: _downloadBook,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: BlocBuilder<BookBloc, BookState>(
+                  builder: (context, state) {
+                    bool isDownloading = false;
+                    bool isAlreadyDownloaded = false;
+                    String? localPath;
+                    double progress = 0;
+
+                    if (state is BookDownloading && state.bookId == widget.book.id) {
+                      isDownloading = true;
+                    } else if (state is BookDownloadProgress && state.bookId == widget.book.id) {
+                      isDownloading = true;
+                      progress = state.progress;
+                    } else if (state is BooksLoaded) {
+                      isAlreadyDownloaded = state.downloadedBooks.containsKey(widget.book.id);
+                      localPath = state.downloadedBooks[widget.book.id];
+                    } else if (state is BookDownloadSuccess && state.bookId == widget.book.id) {
+                      isAlreadyDownloaded = true;
+                      localPath = state.path;
+                    }
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedButton(
+                          label: isDownloading
+                              ? 'Downloading ${(progress * 100).toInt()}%'
+                              : (isAlreadyDownloaded ? 'Open' : 'Download'),
+                          icon: isDownloading 
+                              ? Icons.sync_rounded 
+                              : (isAlreadyDownloaded ? Icons.menu_book_rounded : Icons.download_rounded),
+                          isPrimary: true,
+                          onTap: isDownloading 
+                              ? null 
+                              : (isAlreadyDownloaded 
+                                  ? () => _openBook(localPath!) 
+                                  : _downloadBook),
+                        ),
+                        if (isDownloading) ...[
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(2),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              backgroundColor: Colors.white10,
+                              valueColor: const AlwaysStoppedAnimation<Color>(UiConst.amber),
+                              minHeight: 4,
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AnimatedButton(
+                  label: 'Chat AI',
+                  icon: Icons.chat_bubble_outline_rounded,
+                  isPrimary: false,
+                  onTap: _chatAboutBook,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: AnimatedButton(
-              label: 'Chat AI',
-              icon: Icons.chat_bubble_outline_rounded,
-              isPrimary: false,
-              onTap: _chatAboutBook,
-            ),
+          const SizedBox(height: 12),
+          AnimatedButton(
+            label: 'Notes',
+            icon: Icons.note_alt_outlined,
+            isPrimary: false,
+            onTap: _openNotes,
           ),
         ],
       ),
@@ -657,7 +770,9 @@ class _RelatedBookCard extends StatelessWidget {
                     topRight: Radius.circular(UiConst.radiusMedium),
                   ),
                   child: CachedNetworkImage(
-                    imageUrl: book.coverUrl,
+                    imageUrl: book.coverUrl.startsWith('http') 
+                        ? book.coverUrl 
+                        : "${UrlConst.baseUrl}${book.coverUrl.startsWith('/') ? '' : '/'}${book.coverUrl}",
                     fit: BoxFit.cover,
                     width: double.infinity,
                     placeholder: (_, __) => Container(color: UiConst.slate),

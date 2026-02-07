@@ -12,6 +12,8 @@ import 'package:ethio_book_store/features/books/presentation/widgets/coverImage.
 import 'package:ethio_book_store/features/books/presentation/widgets/header.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/rating.dart';
 import 'package:ethio_book_store/features/books/presentation/widgets/skeleton_loader.dart';
+import 'package:ethio_book_store/features/books/presentation/widgets/enhanced_search_widget.dart';
+import 'package:ethio_book_store/features/books/presentation/widgets/payment_options_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -142,7 +144,27 @@ class _HomePageState extends State<HomePage>
 
     return Scaffold(
       extendBody: true,
-      body: AnimatedBuilder(
+      body: BlocListener<BookBloc, BookState>(
+        listener: (context, state) {
+          if (state is BookDownloadSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Download started for book ${state.bookId}...'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          } else if (state is BookOperationFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.error),
+                backgroundColor: Colors.redAccent,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+        child: AnimatedBuilder(
         animation: _bgController,
         builder: (_, __) {
           final t = Curves.easeInOut.transform(_bgController.value);
@@ -290,6 +312,7 @@ class _HomePageState extends State<HomePage>
           );
         },
       ),
+      ),
       bottomNavigationBar: SafeArea(child: BuildBottomNav(
         context: context,
         navIndex: _navIndex,
@@ -306,28 +329,10 @@ class _HomePageState extends State<HomePage>
   Widget _buildSearch() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: TextField(
+      child: EnhancedSearchWidget(
         controller: _searchCtrl,
-        style: const TextStyle(color: Colors.white),
-        decoration:
-            _glassInputDecoration(
-              hint: 'Search books, authors, topics',
-              icon: Icons.search_rounded,
-            ).copyWith(
-              suffixIcon: _searchCtrl.text.isEmpty
-                  ? const SizedBox.shrink()
-                  : IconButton(
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        color: Colors.white70,
-                      ),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        setState(() {});
-                      },
-                    ),
-            ),
-        onChanged: (_) => setState(() {}),
+        onSearch: (query) => setState(() {}),
+        suggestions: _categories.where((c) => c != 'All').toList(),
       ),
     );
   }
@@ -511,18 +516,58 @@ class _HomePageState extends State<HomePage>
                       Positioned(
                         right: 6,
                         top: 6,
-                        child: GlassIconBtn(
-                          icon: fav
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_border_rounded,
-                          onTap: () {
-                            setState(() {
-                              if (fav) {
-                                _favorites.remove(book.id);
-                              } else {
-                                _favorites.add(book.id);
-                              }
-                            });
+                        child: BlocBuilder<BookBloc, BookState>(
+                          builder: (context, state) {
+                            bool isThisDownloading = false;
+                            bool isAlreadyDownloaded = false;
+                            double innerProgress = 0;
+
+                            if (state is BookDownloading && state.bookId == book.id) {
+                              isThisDownloading = true;
+                            } else if (state is BookDownloadProgress && state.bookId == book.id) {
+                              isThisDownloading = true;
+                              innerProgress = state.progress;
+                            } else if (state is BooksLoaded) {
+                              isAlreadyDownloaded = state.downloadedBooks.containsKey(book.id);
+                            }
+
+                            if (isAlreadyDownloaded) {
+                              return const SizedBox.shrink(); // Hide icon if already downloaded
+                            }
+
+                            if (isThisDownloading) {
+                              return Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black.withOpacity(0.4),
+                                ),
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    value: innerProgress > 0 ? innerProgress : null,
+                                    strokeWidth: 2,
+                                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFF2C94C)),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            return GlassIconBtn(
+                              icon: book.price == 0
+                                  ? Icons.download_rounded
+                                  : Icons.shopping_bag_outlined,
+                              onTap: () {
+                                if (book.price == 0) {
+                                  context
+                                      .read<BookBloc>()
+                                      .add(DownloadBookEvent(book.id));
+                                } else {
+                                  _showPaymentOptions(context, book);
+                                }
+                              },
+                            );
                           },
                         ),
                       ),
@@ -551,18 +596,21 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
                 const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Rating(rating: book.rating, size: isSmall ? 13 : 14),
-                    const Spacer(),
-                    Text(
-                      '\$${book.price.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: Color(0xFFF2C94C),
-                        fontWeight: FontWeight.w800,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    children: [
+                      Rating(rating: book.rating, size: isSmall ? 13 : 14),
+                      const SizedBox(width: 8), // Replaced Spacer with fixed spacing as FittedBox handles width
+                      Text(
+                        '\$${book.price.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: Color(0xFFF2C94C),
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -591,6 +639,20 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  void _showPaymentOptions(BuildContext context, Book book) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => PaymentOptionsSheet(
+        amount: book.price,
+        onPaymentSuccess: () {
+            context.read<BookBloc>().add(DownloadBookEvent(book.id));
+        },
+      ),
+    );
+  }
+}
   //   List<Book> _seedBooks() {
   //     return [
   //       Book(
@@ -695,6 +757,4 @@ class _HomePageState extends State<HomePage>
   //     ];
   //   }
   // }
-}
-
 // Network cover with graceful placeholder, loading, and error handling
