@@ -81,8 +81,10 @@ func main() {
 	deleteNoteUC := noteusecase.NewDeleteNoteUseCase(noteRepo)
 	generateAINoteUC := noteusecase.NewGenerateAINoteUseCase(noteRepo, geminiSummarizer)
 
+	getTrendingBooksUC := bookusecase.NewGetTrendingBooks()
+
 	userHandler := handler.NewUserHandler(createUserUC, updateUserUC, deleteUserUC, getAllUsersUC, getUserByIDUC, loginUC)
-	bookHandler := handler.NewBookHandler(*createBookUC, *getAllBooksUC, *deleteBookUC, *getBookByIDUC, *updateBookUC)
+	bookHandler := handler.NewBookHandler(*createBookUC, *getAllBooksUC, *deleteBookUC, *getBookByIDUC, *updateBookUC, *getTrendingBooksUC)
 	chatHandler := handler.NewChatHandler(*getMultipleChoiceUC, *getTrueFalseUC, *getShortAnswerUC, *getChatResponsesUC, getChatResponseStreamUC)
 	noteHandler := handler.NewNoteHandler(createNoteUC, getNotesUC, deleteNoteUC, generateAINoteUC)
 
