@@ -15,11 +15,12 @@ import (
 )
 
 type BookHandler struct {
-	createBookUseCase  usecase.CreateBook
-	getAllBooksUseCase usecase.GetAllBooks
-	deleteBookUseCase  usecase.DeleteBook
-	getBookByIDUseCase usecase.GetBookByID
-	updateBookUseCase  usecase.UpdateBook
+	createBookUseCase       usecase.CreateBook
+	getAllBooksUseCase      usecase.GetAllBooks
+	deleteBookUseCase       usecase.DeleteBook
+	getBookByIDUseCase      usecase.GetBookByID
+	updateBookUseCase       usecase.UpdateBook
+	getTrendingBooksUseCase usecase.GetTrendingBooks
 }
 
 func NewBookHandler(
@@ -28,13 +29,15 @@ func NewBookHandler(
 	deleteBookUC usecase.DeleteBook,
 	getBookByIDUC usecase.GetBookByID,
 	updateBookUC usecase.UpdateBook,
+	getTrendingBooksUC usecase.GetTrendingBooks,
 ) *BookHandler {
 	return &BookHandler{
-		createBookUseCase:  createBookUC,
-		getAllBooksUseCase: getAllBooksUC,
-		deleteBookUseCase:  deleteBookUC,
-		getBookByIDUseCase: getBookByIDUC,
-		updateBookUseCase:  updateBookUC,
+		createBookUseCase:       createBookUC,
+		getAllBooksUseCase:      getAllBooksUC,
+		deleteBookUseCase:       deleteBookUC,
+		getBookByIDUseCase:      getBookByIDUC,
+		updateBookUseCase:       updateBookUC,
+		getTrendingBooksUseCase: getTrendingBooksUC,
 	}
 }
 
@@ -107,6 +110,20 @@ func (h *BookHandler) GetBookByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"book": book,
+		},
+	})
+}
+
+func (h *BookHandler) GetTrendingBooks(c *gin.Context) {
+	books, err := h.getTrendingBooksUseCase.Execute()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"books": books,
 		},
 	})
 }
