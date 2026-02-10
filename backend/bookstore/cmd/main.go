@@ -30,10 +30,8 @@ func main() {
 	db := postgres.NewPostgresDBConnection()
 	defer db.Close()
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("❌ Error loading .env file:", err)
-	}
+	_ = godotenv.Load()
+
 	supabaseClient := supabase.NewSupabaseClient(os.Getenv("SUPABASE_URL"), os.Getenv("SUPABASE_SERVICE_KEY"))
 	geminiApiKey := os.Getenv("GEMINI_API_KEY")
 	_ = geminiApiKey
