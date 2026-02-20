@@ -1,192 +1,177 @@
-#btluBook-Store
+# btluBook-Store  
+### A Full-Stack Distributed AI-Powered Bookstore Ecosystem
 
-# 📚 Book Store App
-
-A modern **bookstore application** built with **Flutter** and **Go (Gin)**.  
-This app allows users to **upload, download, and share books**, and interact with an **AI assistant (GMNI)** to discuss books, generate summaries, reviews, and quizzes.  
-Book files are stored securely using **Supabase**, and all user and book data is managed with **PostgreSQL**.
+btluBook-Store is a high-performance, cross-platform digital library platform designed for scalable book distribution and AI-driven content analysis. It combines a Go (Gin) backend with a Flutter frontend to deliver a seamless and efficient reading and learning experience.
 
 ---
 
-## ✨ Features
+## Overview
 
-- 📤 **Upload books**  
-  Users can upload PDFs or eBooks to share with others.
+The platform transforms traditional digital reading into an interactive ecosystem by integrating cloud storage, relational data modeling, and generative AI.
 
-- 📥 **Download books**  
-  Browse and download books uploaded by the community.
-
-- 🤖 **AI Book Assistant (GMNI)**  
-  Ask questions about any book and get:
-  - Explanations
-  - Summaries
-  - Reviews
-
-- 📝 **AI Quiz Generator**  
-  Automatically generate quizzes from books:
-  - Multiple-choice
-  - Short answer
-  - True / False
-
-- 📱 **Cross-platform mobile app**  
-  Built with Flutter for Android, iOS, Linux, macOS, web, and Windows.
-
-- ⚙️ **Scalable backend (Go + Gin)**  
-  Handles authentication, file uploads, AI integration, and API requests.
-
-- ☁️ **Cloud storage with Supabase**  
-  Books are uploaded and served via Supabase storage.
-
-- 🗄️ **Database (PostgreSQL)**  
-  Stores users, books, chats, and AI-generated content.
+It follows a microservice-inspired architecture focused on scalability, performance, and clean system design.
 
 ---
 
-## 🛠 Tech Stack
+## Key Features
+
+### Asynchronous Asset Management
+- Optimized upload and download pipelines for PDF and eBook formats  
+- Supabase Object Storage integration for high availability  
+
+### AI-Driven Content Analysis
+- Contextual explanations of book content  
+- Automated summaries  
+- Critical content insights using Google Gemini API  
+
+### Automated Quiz Generation
+- AI-generated multiple-choice questions  
+- Short-answer and logic-based assessments  
+- Enhances learning through interactive evaluation  
+
+### Cross-Platform Application
+- Single Flutter codebase supporting:
+  - Android  
+  - iOS  
+  - Web  
+  - Windows  
+  - macOS  
+  - Linux  
+
+### Backend Architecture
+- RESTful API built with Go (Gin)  
+- JWT-based authentication  
+- Middleware for validation and request handling  
+- Designed for high concurrency and performance  
+
+---
+
+## Technology Stack
 
 ### Frontend
-- Flutter
-- Dart
-- REST / WebSocket communication
+- Framework: Flutter (Dart)  
+- State Management: Provider / BLoC (Clean Architecture)  
+- Networking: REST APIs and WebSocket integration  
 
 ### Backend
-- Go (Gin framework)
-- GMNI AI integration
-- JWT Authentication
+- Language: Go (Golang)  
+- Framework: Gin  
+- Authentication: JWT  
 
-### Database & Storage
-- PostgreSQL
-- Supabase Storage
+### Data and Storage
+- Database: PostgreSQL  
+- Object Storage: Supabase Storage  
+- ORM: GORM  
+
+### AI Integration
+- Google Gemini API  
 
 ---
 
-## 📂 Project Structure
+## System Architecture
 
+```
 .
 ├── backend
-│ └── bookstore
-│ ├── cmd
-│ ├── go.mod
-│ ├── go.sum
-│ ├── internal
-│ └── pkg
-├── ethio_book_store
-└── mobile
-├── analysis_options.yaml
-├── android
-│ ├── app
-│ ├── build.gradle.kts
-│ ├── gradle
-│ ├── gradle.properties
-│ ├── gradlew
-│ ├── local.properties
-│ └── settings.gradle.kts
-├── ios
-│ ├── Flutter
-│ ├── Runner
-│ ├── RunnerTests
-│ ├── Runner.xcodeproj
-│ └── Runner.xcworkspace
-├── lib
-│ ├── app
-│ ├── core
-│ ├── features
-│ ├── injections.dart
-│ └── main.dart
-├── linux
-│ ├── CMakeLists.txt
-│ ├── flutter
-│ └── runner
-├── macos
-│ ├── Flutter
-│ ├── Runner
-│ ├── RunnerTests
-│ ├── Runner.xcodeproj
-│ └── Runner.xcworkspace
-├── pubspec.yaml
-├── README.md
-├── test
-│ └── widget_test.dart
-├── web
-│ ├── favicon.png
-│ ├── icons
-│ ├── index.html
-│ └── manifest.json
-└── windows
-├── CMakeLists.txt
-├── flutter
-└── runner
+│   └── bookstore
+│       ├── cmd
+│       ├── internal
+│       └── pkg
+├── mobile
+│   ├── lib
+│   │   ├── app
+│   │   ├── core
+│   │   ├── features
+│   │   └── injections.dart
+│   └── platform folders
+```
 
+---
 
+## Installation and Setup
 
+### Prerequisites
 
-## 🚀 Getting Started
+- Go (1.20 or higher)  
+- Flutter SDK  
+- PostgreSQL  
+- Supabase account  
 
-### 1️⃣ Clone the repository
+---
+
+### Backend Setup
 
 ```bash
-git clone https://github.com/Bereke1t2/btluBook-Store.git
-cd btluBook-Store
-2️⃣ Run the Backend (Go + Gin)
-bash
-Copy code
 cd backend/bookstore
 go mod tidy
 go run main.go
-The backend will start on:
+```
 
-arduino
-Copy code
+The backend will start at:
+```
 http://localhost:8080
-3️⃣ Run the Flutter App
-bash
+```
 
-cd ../../mobile
+---
+
+### Frontend Setup
+
+```bash
+cd mobile
 flutter pub get
 flutter run
-Make sure you have a connected emulator or device.
+```
 
-🔑 Environment Variables
-Create a .env file in the backend folder and add:
+---
 
-env
-Copy code
-GMNI_API_KEY=your_gmni_api_key_here
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
-DB_URL=postgres://username:password@host:port/dbname
-JWT_SECRET=your_jwt_secret
-🤝 Contributing
-Contributions are welcome!
+## Environment Variables
 
-Fork the repository
+Create a `.env` file inside the `/backend` directory and configure the following:
 
-Create a new branch (git checkout -b feature-name)
+| Variable        | Description                          |
+|----------------|--------------------------------------|
+| GMNI_API_KEY   | Google Gemini API key                |
+| SUPABASE_URL   | Supabase project URL                |
+| SUPABASE_KEY   | Supabase service role key           |
+| DB_URL         | PostgreSQL connection string        |
+| JWT_SECRET     | Secret key for authentication       |
 
-Commit your changes (git commit -m "Add feature")
+---
 
-Push to your branch (git push origin feature-name)
+## Roadmap
 
-Open a Pull Request
+- Advanced search using Elasticsearch  
+- Social features (profiles, follows, reading lists)  
+- Offline mode with local caching (SQLite/Hive)  
+- Personalized recommendation system  
+- Admin dashboard for analytics and moderation  
 
-📌 Future Improvements
-User profiles and authentication
+---
 
-Book categories & search
+## Contribution
 
-Favorites & bookmarks
+Contributions are welcome. Please follow the standard workflow:
 
-Offline reading support
+```bash
+git checkout -b feature/your-feature-name
+git commit -m "Add your feature"
+git push origin feature/your-feature-name
+```
 
-Admin dashboard
+Then open a Pull Request.
 
-Personalized book recommendations
+---
 
-📄 License
+## License
+
 This project is licensed under the MIT License.
 
-👨‍💻 Author
-Bereket
-Built with ❤️ using Flutter, Go (Gin), Supabase, PostgreSQL, and GMNI AI.
+---
 
-If you like this project, feel free to ⭐ the repository!
+## Author
+
+Bereket Aschalew  
+Software Engineer  
+
+- GitHub: https://github.com/Bereke1t2  
+- LinkedIn: https://www.linkedin.com/in/bereket-aschalew  
